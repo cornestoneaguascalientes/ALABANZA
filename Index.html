@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grupo de Alabanza - Dashboard</title>
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="nav-brand">
+                <h1>🎵 Grupo de Alabanza</h1>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="index.html" class="active">Inicio</a></li>
+                <li><a href="canciones.html">Canciones</a></li>
+                <li><a href="setlists.html">Setlists</a></li>
+                <li><a href="equipo.html">Equipo</a></li>
+            </ul>
+            <div class="nav-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <h2>Bienvenido al Sistema de Gestión</h2>
+            <p>Organiza tus canciones, acordes y presentaciones de forma sencilla</p>
+        </section>
+
+        <section class="stats-grid">
+            <div class="stat-card">
+                <h3 id="total-canciones">0</h3>
+                <p>Canciones</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="total-setlists">0</h3>
+                <p>Setlists</p>
+            </div>
+            <div class="stat-card">
+                <h3 id="total-equipo">0</h3>
+                <p>Miembros</p>
+            </div>
+        </section>
+
+        <section class="quick-actions">
+            <h2>Acciones Rápidas</h2>
+            <div class="actions-grid">
+                <a href="canciones.html" class="action-card">
+                    <div class="action-icon">🎼</div>
+                    <h3>Biblioteca de Canciones</h3>
+                    <p>Explora todas las canciones disponibles</p>
+                </a>
+                <a href="setlists.html" class="action-card">
+                    <div class="action-icon">📋</div>
+                    <h3>Setlists</h3>
+                    <p>Gestiona las listas de canciones para eventos</p>
+                </a>
+                <a href="equipo.html" class="action-card">
+                    <div class="action-icon">👥</div>
+                    <h3>Equipo</h3>
+                    <p>Información de los miembros del grupo</p>
+                </a>
+            </div>
+        </section>
+
+        <section class="recent-activity">
+            <h2>Actividad Reciente</h2>
+            <div id="recent-songs" class="recent-list">
+                <!-- Las canciones recientes se cargarán aquí -->
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Grupo de Alabanza - Sistema de Gestión Musical</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
