@@ -1,0 +1,19 @@
+# Sistema y editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*~
+
+# Logs y temporales
+*.log
+*.tmp
+
+# Variables de entorno
+.env
+.env.*
+
+# Google Apps Script: contiene tu SHEET_ID y tu PIN de administrador.
+# Vive en Apps Script, no en el repositorio público.
+Code.gs
