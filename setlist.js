@@ -418,7 +418,6 @@
     $('net-status').addEventListener('click', async () => { 
       UI.toast('Actualizando…'); 
       await Database.refresh();
-      console.log('🔄 Recarga manual completada');
     });
 
     // Biblioteca
@@ -521,7 +520,6 @@
         netStatus.hidden = !Database.isOffline();
         netStatus.textContent = Database.isOffline() ? 'Sin conexión (modo offline)' : 'Sin conexión';
       }
-      console.log('📡 database:change - Estado offline:', Database.isOffline());
     });
     window.addEventListener('admin:change', updateAdminUi);
   }
