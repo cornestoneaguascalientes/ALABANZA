@@ -66,7 +66,7 @@
   }
 
   function normSong(s) {
-    const normalized = {
+    return {
       id: Number(s.id),
       title: String(s.title == null ? '' : s.title),
       originalKey: String(s.originalKey || 'C'),
@@ -75,8 +75,6 @@
       lastModified: s.lastModified || '',
       timeSig: /^\d{1,2}\/\d{1,2}$/.test(String(s.timeSig)) ? String(s.timeSig) : '4/4'
     };
-    console.log('   → Canción normalizada:', normalized);
-    return normalized;
   }
 
   function normSetlists(raw) {
@@ -114,52 +112,31 @@
 
   async function load() {
     let data = null, lastErr = null;
-    console.log('📡 Iniciando carga de datos desde Google Sheets...');
     
     // Limpiar caché forzado para asegurar lectura fresca
-    console.log('🗑️ Limpiando caché local...');
-    try { localStorage.removeItem(CONFIG.CACHE_KEY); } catch (e) { console.log('No se pudo limpiar caché:', e); }
+    try { localStorage.removeItem(CONFIG.CACHE_KEY); } catch (e) { /* noop */ }
     
-    for (let t = 0; t < 2 && !data; t++) {      // un reintento: la primera llamada a Apps Script suele tardar
-      try { 
-        console.log(`📡 Intento ${t + 1} de cargar datos...`);
-        data = await fetchAll(); 
-        console.log('✅ Datos crudos recibidos:', data);
-        console.log('   - songs:', data.songs);
-        console.log('   - setlists:', data.setlists);
-      } catch (e) { 
-        lastErr = e; 
-        console.error('❌ Error al leer Google Sheets (intento ' + (t + 1) + '):', e);
-      }
+    for (let t = 0; t < 2 && !data; t++) {
+      try { data = await fetchAll(); } catch (e) { lastErr = e; }
     }
     
     if (data) {
-      console.log('📋 Procesando canciones...');
       songs = data.songs.map(normSong);
-      console.log('   Canciones procesadas:', songs);
-      
-      console.log('📋 Procesando setlists...');
       setlists = normSetlists(data.setlists);
-      console.log('   Setlists procesados:', setlists);
-      
       offline = false;
       writeCache();
-      console.log('📊 Datos procesados:', songs.length, 'canciones,', Object.keys(setlists).length, 'setlists');
-      notify('Biblioteca actualizada: ' + songs.length + ' canciones', 'success');
+      notify('Biblioteca actualizada', 'success');
     } else {
       const cache = readCache();
       const why = lastErr && lastErr.message ? ' (' + lastErr.message + ')' : '';
-      console.log('⚠️ Usando caché local. Error:', lastErr);
       
       if (cache) {
         songs = (cache.songs || []).map(normSong);
         setlists = normSetlists(cache.setlists);
         offline = true;
-        console.log('📦 Caché local encontrado:', songs.length, 'canciones');
         notify('No se pudo leer Google Sheets' + why + '. Mostrando la última copia', 'error');
       } else {
         songs = []; setlists = {};
-        console.error('❌ Sin caché local y sin conexión. Sheet vacío o error de configuración.');
         notify((lastErr && lastErr.message) || 'No se pudo conectar con Google Sheets. Verifica la configuración.', 'error');
       }
     }
@@ -175,8 +152,7 @@
   }
 
   function refresh() {
-    console.log('🔄 Recarga manual solicitada - limpiando caché...');
-    try { localStorage.removeItem(CONFIG.CACHE_KEY); } catch (e) { console.log('No se pudo limpiar caché:', e); }
+    try { localStorage.removeItem(CONFIG.CACHE_KEY); } catch (e) { /* noop */ }
     loading = load();
     return loading;
   }
