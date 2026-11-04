@@ -1,6 +1,6 @@
 /**
- * TUNER.JS - Afinador por micrófono (guitarra acústica, eléctrica y bajo)
- * Detección de tono por autocorrelación normalizada (estilo McLeod), con afinaciones por instrumento.
+ * TUNER.JS - Afinador cromático por micrófono (cualquier instrumento)
+ * Detección de tono por autocorrelación normalizada (estilo McLeod).
  * Requiere HTTPS o localhost para poder usar el micrófono.
  */
 (function () {
@@ -8,31 +8,7 @@
 
   const NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
   const CHROMATIC = 'Cromático (cualquier nota)';
-  const INST = {
-    acoustic: { label: 'Guitarra acústica', tunings: {
-      'Estándar (EADGBE)': ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'],
-      'Drop D': ['D2', 'A2', 'D3', 'G3', 'B3', 'E4'],
-      'Medio tono abajo': ['D#2', 'G#2', 'C#3', 'F#3', 'A#3', 'D#4'],
-      'DADGAD': ['D2', 'A2', 'D3', 'G3', 'A3', 'D4'],
-      'Open G': ['D2', 'G2', 'D3', 'G3', 'B3', 'D4'],
-      [CHROMATIC]: []
-    } },
-    electric: { label: 'Guitarra eléctrica', tunings: {
-      'Estándar (EADGBE)': ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'],
-      'Drop D': ['D2', 'A2', 'D3', 'G3', 'B3', 'E4'],
-      'Medio tono abajo (Eb)': ['D#2', 'G#2', 'C#3', 'F#3', 'A#3', 'D#4'],
-      'Un tono abajo (D)': ['D2', 'G2', 'C3', 'F3', 'A3', 'D4'],
-      'Drop C': ['C2', 'G2', 'C3', 'F3', 'A3', 'D4'],
-      [CHROMATIC]: []
-    } },
-    bass: { label: 'Bajo', tunings: {
-      '4 cuerdas (EADG)': ['E1', 'A1', 'D2', 'G2'],
-      '5 cuerdas (BEADG)': ['B0', 'E1', 'A1', 'D2', 'G2'],
-      'Drop D': ['D1', 'A1', 'D2', 'G2'],
-      'Medio tono abajo': ['D#1', 'G#1', 'C#2', 'F#2'],
-      [CHROMATIC]: []
-    } }
-  };
+  const INST = { chromatic: { label: 'Cromático', tunings: { [CHROMATIC]: [] } } };
   const PREFS = 'alabanza.tuner';
 
   const $ = (id) => document.getElementById(id);
@@ -42,7 +18,7 @@
   };
   const midiHz = (m) => 440 * Math.pow(2, (m - 69) / 12);
 
-  let inst = 'acoustic', tuning = 'Estándar (EADGBE)';
+  let inst = 'chromatic', tuning = CHROMATIC;
   let running = false, stream = null, src = null, analyser = null, buf = null, timer = null;
   let hist = [], lastAt = 0, refOsc = [], boost = null;
 
@@ -86,7 +62,7 @@
     const ctx = AudioCore.context();
     const ss = strings();
     const midis = ss.map((s) => s.midi);
-    const lo = ss.length ? Math.min(...midis) : 28, hi = ss.length ? Math.max(...midis) : 76;
+    const lo = ss.length ? Math.min(...midis) : 23, hi = ss.length ? Math.max(...midis) : 79;
     analyser.getFloatTimeDomainData(buf);
     const f = detect(buf, ctx.sampleRate, midiHz(lo) * 0.85, midiHz(hi + 7) * 1.1);
     const now = performance.now();
@@ -198,25 +174,11 @@
     });
   }
 
-  function fillTunings() {
-    $('tuner-tuning').innerHTML = Object.keys(INST[inst].tunings).map((t) => `<option${t === tuning ? ' selected' : ''}>${t}</option>`).join('');
-    renderStrings(); idle();
-    try { localStorage.setItem(PREFS, JSON.stringify({ inst, tuning })); } catch (e) { /* noop */ }
-  }
-
   document.addEventListener('DOMContentLoaded', () => {
     if (!$('tuner-toggle')) return;
-    try {
-      const p = JSON.parse(localStorage.getItem(PREFS)) || {};
-      if (INST[p.inst]) { inst = p.inst; tuning = INST[inst].tunings[p.tuning] ? p.tuning : Object.keys(INST[inst].tunings)[0]; }
-    } catch (e) { /* noop */ }
-    $('tuner-inst').innerHTML = Object.keys(INST).map((k) => `<option value="${k}"${k === inst ? ' selected' : ''}>${INST[k].label}</option>`).join('');
-    $('tuner-inst').addEventListener('change', (e) => { inst = e.target.value; tuning = Object.keys(INST[inst].tunings)[0]; fillTunings(); });
-    $('tuner-tuning').addEventListener('change', (e) => { tuning = e.target.value; fillTunings(); });
-    $('tuner-strings').addEventListener('click', (e) => { const b = e.target.closest('.key-btn'); if (b) playRef(b.dataset.name); });
     $('tuner-toggle').addEventListener('click', () => (running ? stop() : start()));
     document.addEventListener('visibilitychange', () => { if (document.hidden) stop(); });
-    fillTunings();
+    renderStrings(); idle();
   });
 
   window.Tuner = { start, stop, isRunning: () => running };
