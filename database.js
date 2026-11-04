@@ -175,6 +175,8 @@
   }
 
   function refresh() {
+    console.log('🔄 Recarga manual solicitada - limpiando caché...');
+    try { localStorage.removeItem(CONFIG.CACHE_KEY); } catch (e) { console.log('No se pudo limpiar caché:', e); }
     loading = load();
     return loading;
   }
