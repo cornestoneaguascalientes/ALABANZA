@@ -249,6 +249,11 @@
     volume = clamp(v, 0, 1);
     if (master) master.gain.setTargetAtTime(volume, AudioCore.context().currentTime, 0.08);
     saveSettings();
+    // Mantiene sincronizado el control de volumen de la pestaña Pad
+    const vs = document.getElementById('pad-volume');
+    const vo = document.getElementById('pad-volume-value');
+    if (vs) vs.value = Math.round(volume * 100);
+    if (vo) vo.textContent = Math.round(volume * 100) + '%';
   }
 
   /** band: 'low' | 'mid' | 'high' (dB, -12..+12) o 'reverb' (0..100) */
@@ -338,6 +343,7 @@
   window.Pads = {
     play, stop, toggle, changeTone, setVolume, setEq, resetEq,
     getVolume: () => volume,
+    getSettings: () => Object.assign({}, settings),
     isPlaying: () => playing,
     getCurrentTone: () => toneLabel
   };
