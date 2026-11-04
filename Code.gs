@@ -102,6 +102,22 @@ function fmtDate(v) {
   return String(v || '').slice(0, 10);
 }
 
+/** Compás: Sheets convierte "6/8" en fecha (6 de agosto). Si llega una fecha, se recupera el compás. */
+function fmtTimeSig(v) {
+  const valid = function (n, d) { return n >= 1 && n <= 16 && [1, 2, 4, 8, 16].indexOf(d) !== -1; };
+  if (v instanceof Date) {
+    const ss = SpreadsheetApp.openById(SHEET_ID);
+    const m = Number(Utilities.formatDate(v, ss.getSpreadsheetTimeZone(), 'M'));
+    const d = Number(Utilities.formatDate(v, ss.getSpreadsheetTimeZone(), 'd'));
+    const monthFirst = /^en_(US|PH)$|^en$/.test(ss.getSpreadsheetLocale());
+    const order = monthFirst ? [[m, d], [d, m]] : [[d, m], [m, d]];
+    for (let i = 0; i < order.length; i++) if (valid(order[i][0], order[i][1])) return order[i][0] + '/' + order[i][1];
+    return '4/4';
+  }
+  const s = String(v == null ? '' : v).trim();
+  return /^\d{1,2}\/\d{1,2}$/.test(s) ? s : '4/4';
+}
+
 function fmtStamp(v) {
   return v instanceof Date ? v.toISOString() : String(v || '');
 }
@@ -146,6 +162,7 @@ function getSongs() {
       id = ++maxId;
       s.getRange(i + 1, 1).setValue(id);
     }
+    if (r[6] instanceof Date) s.getRange(i + 1, 7).setNumberFormat('@').setValue(fmtTimeSig(r[6])); // repara celdas ya convertidas
     songs.push({
       id: id,
       title: String(r[1]),
@@ -153,7 +170,7 @@ function getSongs() {
       bpm: Number(r[3]) || 120,
       lyrics: String(r[4] == null ? '' : r[4]),
       lastModified: fmtStamp(r[5]),
-      timeSig: /^\d{1,2}\/\d{1,2}$/.test(String(r[6])) ? String(r[6]) : '4/4'
+      timeSig: fmtTimeSig(r[6])
     });
   }
   return { songs: songs };
@@ -183,7 +200,9 @@ function addSong(data) {
   const newId = (ids.length ? Math.max.apply(null, ids) : 0) + 1;
   const stamp = new Date().toISOString();
 
-  s.appendRow([newId, safeText(song.title), song.originalKey, song.bpm, safeText(song.lyrics, 40000), stamp, song.timeSig]);
+  const row = Math.max(s.getLastRow(), 1) + 1;
+  s.getRange(row, 7).setNumberFormat('@'); // texto: evita que "6/8" se vuelva fecha
+  s.getRange(row, 1, 1, 7).setValues([[newId, safeText(song.title), song.originalKey, song.bpm, safeText(song.lyrics, 40000), stamp, song.timeSig]]);
 
   return { song: Object.assign({ id: newId, lastModified: stamp }, song) };
 }
@@ -196,6 +215,7 @@ function updateSong(data) {
 
   for (let i = 1; i < all.length; i++) {
     if (Number(all[i][0]) === Number(data.id)) {
+      s.getRange(i + 1, 7).setNumberFormat('@'); // texto: evita que "6/8" se vuelva fecha
       s.getRange(i + 1, 2, 1, 6).setValues([[
         safeText(song.title), song.originalKey, song.bpm, safeText(song.lyrics, 40000), stamp, song.timeSig
       ]]);
@@ -266,6 +286,7 @@ function initializeSheets() {
     canciones.appendRow(['ID', 'Título', 'Tono', 'BPM', 'Letra', 'FechaMod', 'Compas']);
   }
   canciones.getRange(1, 7).setValue('Compas'); // columna nueva (compás de cada canción)
+  canciones.getRange('G:G').setNumberFormat('@'); // compás como texto (si no, "6/8" se vuelve fecha)
 
   let setlists = ss.getSheetByName(SHEET_SETLISTS);
   if (!setlists) {
