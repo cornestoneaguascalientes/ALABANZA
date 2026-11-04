@@ -9,6 +9,8 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Alabanza</title>
+  <link rel="icon" type="image/jpeg" href="logo_app.jpg">
+  <link rel="apple-touch-icon" href="logo_app.jpg">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -90,6 +92,10 @@
 
       <!-- INICIO -->
       <section id="home-view" class="view active" aria-labelledby="view-title">
+        <div class="brand">
+          <img class="brand-img brand-light" src="logo_pagina.jpg" alt="Cornerstone Aguascalientes">
+          <img class="brand-img brand-dark" src="logo_pagina_2.jpg" alt="Cornerstone Aguascalientes">
+        </div>
         <p id="home-date" class="home-date"></p>
         <div class="menu">
           <button class="menu-item" data-go="library">
@@ -114,7 +120,7 @@
           </button>
           <button class="menu-item" data-go="tools" data-focus="tool-tuner">
             <span class="menu-ico"><svg class="i"><use href="#i-tuner"/></svg></span>
-            <span class="menu-text"><span class="menu-title">Afinador</span><span class="menu-sub">Guitarra acústica, eléctrica y bajo</span></span>
+            <span class="menu-text"><span class="menu-title">Afinador</span><span class="menu-sub">Cromático, para cualquier instrumento</span></span>
             <svg class="i chev"><use href="#i-chevron"/></svg>
           </button>
           <button class="menu-item" data-go="tools" data-focus="tool-synth">
@@ -251,17 +257,13 @@
               <svg class="i i-stop"><use href="#i-stop"/></svg>
             </button>
           </div>
-          <div class="tuner-pick">
-            <select id="tuner-inst" aria-label="Instrumento"></select>
-            <select id="tuner-tuning" aria-label="Afinación"></select>
-          </div>
           <div class="tuner-read">
             <div id="tuner-note" class="tuner-note">–</div>
             <div id="tuner-sub" class="tuner-sub">Toca el botón para activar el micrófono</div>
           </div>
           <div id="tuner-meter" class="tuner-meter" aria-hidden="true"><div id="tuner-needle" class="tuner-needle"></div></div>
-          <div id="tuner-strings" class="strings" role="group" aria-label="Cuerdas (toca una para escuchar la nota)"></div>
-          <p class="hint">Toca una cuerda para oír la nota de referencia.</p>
+          <div id="tuner-strings" class="strings" hidden></div>
+          <p class="hint">Afinador cromático: detecta cualquier nota, sirve para cualquier instrumento.</p>
         </div>
 
         <div class="tool" id="tool-synth">
