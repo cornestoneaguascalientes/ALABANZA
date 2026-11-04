@@ -20,8 +20,8 @@
 // ============================
 // CONFIGURACIÓN
 // ============================
-const SHEET_ID = 'TU_SHEET_ID_AQUI';
-const ADMIN_PIN = '1927';            // Se valida aquí, en el servidor. Cámbialo.
+const SHEET_ID = '1BxLP4b7u7W1Z4sNHq0gz8rfs1NKqWxZlGJD7lP1Nitg';
+const ADMIN_PIN = '2021';            // Se valida aquí, en el servidor. Cámbialo.
 const SHEET_CANCIONES = 'Canciones';
 const SHEET_SETLISTS = 'Setlists';
 const WRITE_ACTIONS = ['addSong', 'updateSong', 'deleteSong', 'saveSetlist'];
