@@ -415,7 +415,11 @@
     document.querySelectorAll('.menu-item').forEach((b) => b.addEventListener('click', () => switchView(b.dataset.go, b.dataset.focus)));
 
     document.querySelectorAll('#tool-tabs [data-tool]').forEach((b) => b.addEventListener('click', () => showTool(b.dataset.tool)));
-    $('net-status').addEventListener('click', () => { UI.toast('Actualizando…'); Database.refresh(); });
+    $('net-status').addEventListener('click', async () => { 
+      UI.toast('Actualizando…'); 
+      await Database.refresh();
+      console.log('🔄 Recarga manual completada');
+    });
 
     // Biblioteca
     $('search-input').addEventListener('input', (e) => { state.query = e.target.value; renderLibrary(); });
@@ -512,7 +516,12 @@
       renderLibrary();
       renderSetlist();
       renderHome();
-      $('net-status').hidden = !Database.isOffline();
+      const netStatus = $('net-status');
+      if (netStatus) {
+        netStatus.hidden = !Database.isOffline();
+        netStatus.textContent = Database.isOffline() ? 'Sin conexión (modo offline)' : 'Sin conexión';
+      }
+      console.log('📡 database:change - Estado offline:', Database.isOffline());
     });
     window.addEventListener('admin:change', updateAdminUi);
   }
