@@ -126,11 +126,25 @@
           </span>
           <span class="key-badge">${esc(s.originalKey)}</span>
         </button>
-        <span class="row-tools admin-only">
-          <button class="icon-btn" data-action="edit" data-id="${s.id}" aria-label="Editar ${esc(s.title)}">${icon('edit')}</button>
-          <button class="icon-btn" data-action="delete" data-id="${s.id}" aria-label="Eliminar ${esc(s.title)}">${icon('trash')}</button>
+        <span class="row-tools">
+          <button class="icon-btn pad-settings-btn" data-action="pad-settings" data-id="${s.id}" data-key="${esc(s.originalKey)}" aria-label="Ajustes de pad">
+            <svg class="i"><use href="#i-pad"/></svg>
+          </button>
+          <span class="row-tools admin-only">
+            <button class="icon-btn" data-action="edit" data-id="${s.id}" aria-label="Editar ${esc(s.title)}">${icon('edit')}</button>
+            <button class="icon-btn" data-action="delete" data-id="${s.id}" aria-label="Eliminar ${esc(s.title)}">${icon('trash')}</button>
+          </span>
         </span>
       </div>`).join('');
+  }
+
+  function openPadSettings(key) {
+    switchView('tools', 'tool-pad');
+    // Seleccionar el tono del pad usando data-tone
+    setTimeout(() => {
+      const keyBtn = document.querySelector('#pad-keys button[data-tone="' + key + '"]');
+      if (keyBtn) keyBtn.click();
+    }, 100);
   }
 
   async function deleteSong(id) {
@@ -430,6 +444,7 @@
       if (b.dataset.action === 'open') openViewer(id);
       else if (b.dataset.action === 'edit') openSongDialog(id);
       else if (b.dataset.action === 'delete') deleteSong(id);
+      else if (b.dataset.action === 'pad-settings') openPadSettings(b.dataset.key);
     });
 
     // Setlist
