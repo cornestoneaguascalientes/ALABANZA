@@ -44,7 +44,7 @@
 
   let inst = 'acoustic', tuning = 'Estándar (EADGBE)';
   let running = false, stream = null, src = null, analyser = null, buf = null, timer = null;
-  let hist = [], lastAt = 0, refOsc = [];
+  let hist = [], lastAt = 0, refOsc = [], boost = null;
 
   const strings = () => INST[inst].tunings[tuning].map(parseNote);
 
@@ -53,7 +53,7 @@
     const N = x.length;
     let rms = 0;
     for (let i = 0; i < N; i++) rms += x[i] * x[i];
-    if (Math.sqrt(rms / N) < 0.01) return 0;
+    if (Math.sqrt(rms / N) < 0.006) return 0;
 
     const minLag = Math.max(2, Math.floor(sr / maxHz));
     const maxLag = Math.min(Math.ceil(sr / minHz), (N >> 1) - 2);
@@ -158,7 +158,10 @@
     src = ctx.createMediaStreamSource(stream);
     analyser = ctx.createAnalyser();
     analyser.fftSize = 4096;
-    src.connect(analyser);
+    // El micrófono del celular capta bajito con el AGC apagado: se amplifica solo para analizar (no suena)
+    boost = ctx.createGain();
+    boost.gain.value = 10;
+    src.connect(boost); boost.connect(analyser);
     buf = new Float32Array(analyser.fftSize);
     running = true; hist = []; lastAt = 0;
     timer = setInterval(tick, 70);
@@ -170,7 +173,7 @@
     running = false;
     clearInterval(timer);
     if (stream) stream.getTracks().forEach((t) => t.stop());
-    try { src.disconnect(); } catch (e) { /* noop */ }
+    try { src.disconnect(); boost.disconnect(); } catch (e) { /* noop */ }
     stream = src = analyser = null;
     try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { /* noop */ }
     renderToggle(); idle();
