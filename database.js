@@ -112,25 +112,41 @@
 
   async function load() {
     let data = null, lastErr = null;
+    console.log('📡 Iniciando carga de datos desde Google Sheets...');
+    
     for (let t = 0; t < 2 && !data; t++) {      // un reintento: la primera llamada a Apps Script suele tardar
-      try { data = await fetchAll(); } catch (e) { lastErr = e; console.error('Error al leer Google Sheets:', e); }
+      try { 
+        console.log(`📡 Intento ${t + 1} de cargar datos...`);
+        data = await fetchAll(); 
+        console.log('✅ Datos cargados exitosamente:', data);
+      } catch (e) { 
+        lastErr = e; 
+        console.error('❌ Error al leer Google Sheets (intento ' + (t + 1) + '):', e);
+      }
     }
+    
     if (data) {
       songs = data.songs.map(normSong);
       setlists = normSetlists(data.setlists);
       offline = false;
       writeCache();
+      console.log('📊 Datos procesados:', songs.length, 'canciones,', Object.keys(setlists).length, 'setlists');
+      notify('Biblioteca actualizada', 'success');
     } else {
       const cache = readCache();
       const why = lastErr && lastErr.message ? ' (' + lastErr.message + ')' : '';
+      console.log('⚠️ Usando caché local. Error:', lastErr);
+      
       if (cache) {
         songs = (cache.songs || []).map(normSong);
         setlists = normSetlists(cache.setlists);
         offline = true;
+        console.log('📦 Caché local encontrado:', songs.length, 'canciones');
         notify('No se pudo leer Google Sheets' + why + '. Mostrando la última copia', 'error');
       } else {
         songs = []; setlists = {};
-        notify((lastErr && lastErr.message) || 'No se pudo conectar con Google Sheets', 'error');
+        console.error('❌ Sin caché local y sin conexión. Sheet vacío o error de configuración.');
+        notify((lastErr && lastErr.message) || 'No se pudo conectar con Google Sheets. Verifica la configuración.', 'error');
       }
     }
     loaded = true;
