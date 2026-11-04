@@ -442,3 +442,11 @@ body.on-home .toast-root { bottom: 24px; }
 }
 .hint { font-size: 13px; color: var(--dim); padding: 16px 0 0; text-align: center; }
 #pad-dialog .eq { margin-top: 0; }
+
+/* ---------- Logo de inicio (cambia con el tema; el blend quita el fondo de la imagen) ---------- */
+.brand { display: flex; justify-content: center; margin: 4px 0 8px; }
+.brand-img { width: min(100%, 360px); height: auto; display: block; }
+.brand-light { display: none; mix-blend-mode: multiply; }
+.brand-dark { mix-blend-mode: screen; }
+:root[data-theme="light"] .brand-light { display: block; }
+:root[data-theme="light"] .brand-dark { display: none; }
