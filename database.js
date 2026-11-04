@@ -11,7 +11,7 @@
 
   const CONFIG = {
     // Pega aquí la URL de tu implementación de Apps Script (termina en /exec)
-    GOOGLE_APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbx5nbyHKSyrustVUdUlisJ5JEIIx66moj8cxkMMEkFdFH7dSMOboqoA8Nv2qb3WNRVetg/exec',
+    GOOGLE_APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyCTVFOS1rodHWxv4CF1PLkVFQqpiWGG9gTLKbNF9W5hFo3NNmO0xcPyAC7rjmXSPzxqA/exec',
     REQUEST_TIMEOUT: 15000,
     CACHE_KEY: 'alabanza.cache.v1'
   };
