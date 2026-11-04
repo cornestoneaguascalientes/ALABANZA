@@ -66,7 +66,7 @@
   }
 
   function normSong(s) {
-    return {
+    const normalized = {
       id: Number(s.id),
       title: String(s.title == null ? '' : s.title),
       originalKey: String(s.originalKey || 'C'),
@@ -75,6 +75,8 @@
       lastModified: s.lastModified || '',
       timeSig: /^\d{1,2}\/\d{1,2}$/.test(String(s.timeSig)) ? String(s.timeSig) : '4/4'
     };
+    console.log('   → Canción normalizada:', normalized);
+    return normalized;
   }
 
   function normSetlists(raw) {
@@ -114,11 +116,17 @@
     let data = null, lastErr = null;
     console.log('📡 Iniciando carga de datos desde Google Sheets...');
     
+    // Limpiar caché forzado para asegurar lectura fresca
+    console.log('🗑️ Limpiando caché local...');
+    try { localStorage.removeItem(CONFIG.CACHE_KEY); } catch (e) { console.log('No se pudo limpiar caché:', e); }
+    
     for (let t = 0; t < 2 && !data; t++) {      // un reintento: la primera llamada a Apps Script suele tardar
       try { 
         console.log(`📡 Intento ${t + 1} de cargar datos...`);
         data = await fetchAll(); 
-        console.log('✅ Datos cargados exitosamente:', data);
+        console.log('✅ Datos crudos recibidos:', data);
+        console.log('   - songs:', data.songs);
+        console.log('   - setlists:', data.setlists);
       } catch (e) { 
         lastErr = e; 
         console.error('❌ Error al leer Google Sheets (intento ' + (t + 1) + '):', e);
@@ -126,12 +134,18 @@
     }
     
     if (data) {
+      console.log('📋 Procesando canciones...');
       songs = data.songs.map(normSong);
+      console.log('   Canciones procesadas:', songs);
+      
+      console.log('📋 Procesando setlists...');
       setlists = normSetlists(data.setlists);
+      console.log('   Setlists procesados:', setlists);
+      
       offline = false;
       writeCache();
       console.log('📊 Datos procesados:', songs.length, 'canciones,', Object.keys(setlists).length, 'setlists');
-      notify('Biblioteca actualizada', 'success');
+      notify('Biblioteca actualizada: ' + songs.length + ' canciones', 'success');
     } else {
       const cache = readCache();
       const why = lastErr && lastErr.message ? ' (' + lastErr.message + ')' : '';
