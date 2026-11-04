@@ -401,6 +401,43 @@
     </form>
   </dialog>
 
+  <!-- DIÁLOGO: AJUSTES DEL PAD (se abre dejando presionado el botón de pad en el setlist) -->
+  <dialog id="pad-dialog">
+    <div class="dlg">
+      <div>
+        <h3>Ajustes del pad</h3>
+        <p id="pad-dlg-sub" class="row-sub"></p>
+      </div>
+      <button type="button" id="pd-toggle" class="btn btn-primary">Reproducir</button>
+      <div>
+        <label class="slider-row"><span>Volumen</span>
+          <input id="pd-volume" type="range" min="0" max="100" value="50" aria-label="Volumen del pad">
+          <output id="pd-volume-value">50%</output></label>
+      </div>
+      <div class="eq" role="group" aria-label="Ecualizador del pad">
+        <div class="eq-head">
+          <h3>Ecualizador</h3>
+          <button id="pd-reset" type="button" class="btn btn-sm">Restablecer</button>
+        </div>
+        <label class="slider-row"><span>Graves</span>
+          <input id="pd-low" type="range" min="-12" max="12" step="1" value="0" aria-label="Graves">
+          <output id="pd-low-value">0 dB</output></label>
+        <label class="slider-row"><span>Medios</span>
+          <input id="pd-mid" type="range" min="-12" max="12" step="1" value="0" aria-label="Medios">
+          <output id="pd-mid-value">0 dB</output></label>
+        <label class="slider-row"><span>Agudos</span>
+          <input id="pd-high" type="range" min="-12" max="12" step="1" value="0" aria-label="Agudos">
+          <output id="pd-high-value">0 dB</output></label>
+        <label class="slider-row"><span>Ambiente</span>
+          <input id="pd-reverb" type="range" min="0" max="100" value="55" aria-label="Ambiente (reverb)">
+          <output id="pd-reverb-value">55%</output></label>
+      </div>
+      <div class="dlg-actions">
+        <button type="button" id="pd-close" class="btn">Cerrar</button>
+      </div>
+    </div>
+  </dialog>
+
   <div id="toast-root" class="toast-root" aria-live="polite"></div>
 </body>
 </html>
