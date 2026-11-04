@@ -19,7 +19,10 @@
     mode: 'singer',    // 'singer' | 'musician'
     scale: 1,          // tamaño de letra
     date: today(),
-    editingId: null    // null = canción nueva
+    editingId: null,   // null = canción nueva
+    padRow: null,      // fila del setlist que tiene el pad sonando (fecha|id)
+    metroRow: null,    // fila del setlist que tiene el metrónomo sonando
+    dlgRow: null       // fila cuyo ajuste de pad está abierto
   };
 
   function today() {
@@ -325,6 +328,10 @@
           </span>
           <span class="key-badge">${esc(tone)}</span>
         </button>
+        <span class="row-play">
+          <button type="button" class="icon-btn outline" data-action="pad" data-i="${r.i}" data-sid="${r.en.songId}" aria-pressed="false" aria-label="Pad en ${esc(tone)} (mantén presionado para ajustes)">${icon('pad')}</button>
+          <button type="button" class="icon-btn outline" data-action="metro" data-i="${r.i}" data-sid="${r.en.songId}" aria-pressed="false" aria-label="Metrónomo a ${r.song.bpm} BPM, ${esc(r.song.timeSig)}">${icon('metro')}</button>
+        </span>
         <span class="row-tools admin-only">
           <select class="key-select" data-action="key" data-i="${r.i}" aria-label="Tono de ${esc(r.song.title)} en este servicio">${keyOptionsHtml(Music.canonicalKey(tone))}</select>
           <button class="icon-btn" data-action="up" data-i="${r.i}" aria-label="Subir">${icon('up')}</button>
@@ -332,7 +339,80 @@
           <button class="icon-btn" data-action="remove" data-i="${r.i}" aria-label="Quitar del setlist">${icon('x')}</button>
         </span>
       </div>`;
-    }).join('');
+    }).join('') + '<p class="hint">Mantén presionado el botón del pad para ajustar graves, medios, agudos y ambiente.</p>';
+    refreshPlayButtons();
+  }
+
+  // ---------- Pad y metrónomo desde el setlist ----------
+  const rowKey = (sid) => state.date + '|' + sid;
+  const entryInfo = (i) => {
+    const en = Database.getSetlistEntries(state.date)[i];
+    const song = en && Database.getSongById(en.songId);
+    return song ? { song, tone: en.toneForService || song.originalKey } : null;
+  };
+
+  function togglePadFor(i) {
+    const info = entryInfo(i);
+    if (!info) return;
+    const key = rowKey(info.song.id);
+    if (Pads.isPlaying() && state.padRow === key) { Pads.stop(); state.padRow = null; }
+    else if (Pads.isPlaying()) { Pads.changeTone(info.tone); state.padRow = key; }  // cambia de tono con crossfade
+    else { Pads.play(info.tone); state.padRow = key; }
+    refreshPlayButtons();
+  }
+
+  function toggleMetroFor(i) {
+    const info = entryInfo(i);
+    if (!info) return;
+    const key = rowKey(info.song.id);
+    if (Metronome.isPlaying() && state.metroRow === key) { Metronome.stop(); state.metroRow = null; }
+    else {
+      const ts = Music.parseTimeSig(info.song.timeSig);
+      Metronome.setMeter(ts.beats, ts.den, false);
+      Metronome.setBPM(info.song.bpm);
+      Metronome.start();
+      state.metroRow = key;
+    }
+    refreshPlayButtons();
+  }
+
+  function refreshPlayButtons() {
+    if (!window.Pads || !window.Metronome) return;
+    if (!Pads.isPlaying()) state.padRow = null;
+    if (!Metronome.isPlaying()) state.metroRow = null;
+    document.querySelectorAll('#setlist-songs [data-action="pad"], #setlist-songs [data-action="metro"]').forEach((b) => {
+      const on = (b.dataset.action === 'pad' ? state.padRow : state.metroRow) === rowKey(b.dataset.sid);
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', String(on));
+    });
+    const dlg = $('pad-dialog');
+    if (dlg && dlg.open && state.dlgRow != null) {
+      const info = entryInfo(state.dlgRow);
+      const on = info && Pads.isPlaying() && state.padRow === rowKey(info.song.id);
+      $('pd-toggle').textContent = on ? 'Detener pad' : 'Reproducir en ' + (info ? Music.canonicalKey(info.tone) : '');
+      $('pd-toggle').classList.toggle('btn-primary', !on);
+    }
+  }
+
+  // Ajustes del pad (diálogo que se abre dejando presionado el botón)
+  const PD = [['pd-volume', 'volume'], ['pd-low', 'low'], ['pd-mid', 'mid'], ['pd-high', 'high'], ['pd-reverb', 'reverb']];
+
+  function syncPadDialog() {
+    const v = Object.assign({}, Pads.getSettings(), { volume: Math.round(Pads.getVolume() * 100) });
+    PD.forEach(([id, k]) => {
+      $(id).value = v[k];
+      $(id + '-value').textContent = k === 'volume' || k === 'reverb' ? v[k] + '%' : (v[k] > 0 ? '+' : '') + v[k] + ' dB';
+    });
+  }
+
+  function openPadDialog(i) {
+    const info = entryInfo(i);
+    if (!info) return;
+    state.dlgRow = i;
+    $('pad-dlg-sub').textContent = info.song.title + ' · tono ' + Music.canonicalKey(info.tone);
+    syncPadDialog();
+    $('pad-dialog').showModal();
+    refreshPlayButtons();
   }
 
   /** Aplica un cambio al setlist de la fecha actual y lo guarda en Sheets */
@@ -445,6 +525,37 @@
     $('cancel-sl').addEventListener('click', () => $('setlist-dialog').close());
 
     const sl = $('setlist-songs');
+
+    // Dejar presionado el botón de pad (~0.5 s) abre sus ajustes
+    const press = { timer: null, fired: false, x: 0, y: 0 };
+    const cancelPress = () => clearTimeout(press.timer);
+    sl.addEventListener('pointerdown', (e) => {
+      const b = e.target.closest('[data-action="pad"]');
+      if (!b) return;
+      press.fired = false; press.x = e.clientX; press.y = e.clientY;
+      cancelPress();
+      press.timer = setTimeout(() => {
+        press.fired = true;
+        if (navigator.vibrate) navigator.vibrate(30);
+        openPadDialog(Number(b.dataset.i));
+      }, 500);
+    });
+    sl.addEventListener('pointermove', (e) => {
+      if (Math.abs(e.clientX - press.x) > 10 || Math.abs(e.clientY - press.y) > 10) cancelPress();
+    });
+    ['pointerup', 'pointercancel'].forEach((t) => sl.addEventListener(t, cancelPress));
+    sl.addEventListener('contextmenu', (e) => { if (e.target.closest('.row-play')) e.preventDefault(); });
+
+    PD.forEach(([id, k]) => $(id).addEventListener('input', (e) => {
+      const n = Number(e.target.value);
+      if (k === 'volume') Pads.setVolume(n / 100); else Pads.setEq(k, n);
+      $(id + '-value').textContent = k === 'volume' || k === 'reverb' ? n + '%' : (n > 0 ? '+' : '') + n + ' dB';
+    }));
+    $('pd-reset').addEventListener('click', () => { Pads.resetEq(); syncPadDialog(); });
+    $('pd-close').addEventListener('click', () => $('pad-dialog').close());
+    $('pd-toggle').addEventListener('click', () => { if (state.dlgRow != null) togglePadFor(state.dlgRow); });
+    window.addEventListener('audio:state', refreshPlayButtons);
+
     sl.addEventListener('click', (e) => {
       const b = e.target.closest('[data-action]');
       if (!b || b.tagName === 'SELECT') return;
@@ -452,6 +563,8 @@
       const entries = Database.getSetlistEntries(state.date);
       switch (b.dataset.action) {
         case 'open': openViewer(entries[i].songId, entries[i].toneForService); break;
+        case 'pad': if (press.fired) { press.fired = false; break; } togglePadFor(i); break;
+        case 'metro': toggleMetroFor(i); break;
         case 'up': mutateSetlist((en) => swap(en, i, i - 1)); break;
         case 'down': mutateSetlist((en) => swap(en, i, i + 1)); break;
         case 'remove': mutateSetlist((en) => en.splice(i, 1)); break;
