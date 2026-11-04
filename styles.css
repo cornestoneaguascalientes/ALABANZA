@@ -447,7 +447,7 @@ body.on-home .toast-root { bottom: 24px; }
 .brand { display: none; flex: 1; align-items: center; min-width: 0; }
 body.on-home .brand { display: flex; }
 body.on-home #view-title { display: none; }
-.brand-img { height: 56px; width: auto; max-width: 100%; display: block; }
+.brand-img { height: 56px; width: 175px; max-width: 100%; object-fit: fill; display: block; }
 .brand-light { display: none; mix-blend-mode: multiply; }
 .brand-dark { mix-blend-mode: screen; }
 :root[data-theme="light"] .brand-light { display: block; }
