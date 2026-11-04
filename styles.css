@@ -434,3 +434,11 @@ body.on-home .toast-root { bottom: 24px; }
 .bk { position: absolute; top: 0; width: 6.6%; height: 62%; transform: translateX(-50%); z-index: 2; background: var(--bg); border: 1px solid var(--line-2); border-radius: 0 0 6px 6px; }
 .bk.on { background: var(--dim); }
 #synth-sustain.active { background: var(--white); color: var(--bg); border-color: var(--white); }
+
+/* ---------- Botones de pad y metrónomo en el setlist ---------- */
+.row-play { display: flex; align-items: center; gap: 6px; margin-left: 8px; flex: none; }
+.row-play .icon-btn {
+  touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+}
+.hint { font-size: 13px; color: var(--dim); padding: 16px 0 0; text-align: center; }
+#pad-dialog .eq { margin-top: 0; }
