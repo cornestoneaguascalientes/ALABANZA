@@ -45,11 +45,11 @@ Copia la URL que termina en `/exec`.
 - **Formato de letra:** acordes entre corchetes justo antes de la sílaba: `[C]Gran[Am]de es el [F]Señor`. Una línea sola como `[Coro]` crea un título de sección. Se aceptan acordes como `Cmaj7`, `G7sus4` y `C/E`.
 - **Visor:** vista Cantante (solo letra) o Músico (acordes sobre la sílaba), transpositor ±1 semitono (toca el tono para volver al original), tamaño de letra y pantalla siempre encendida mientras está abierto.
 - **Setlist:** cada canción tiene su tono para el servicio. Al abrirla desde el setlist ya aparece transpuesta a ese tono.
-- **Inicio:** al abrir la app solo aparece el menú principal (Biblioteca, Setlist, Pad, Metrónomo, Afinador y Sintetizador). Las barras de navegación aparecen al entrar a cualquier sección.
+- **Inicio:** al abrir la app solo aparece el menú principal (Biblioteca, Setlist, Pad, Metrónomo, Afinador y Sintetizador); ahí también aparece el logo, que cambia según el tema. Las barras de navegación aparecen al entrar a cualquier sección.
 - **Compás:** cada canción guarda su compás (4/4, 6/8, etc.). Se ve junto al BPM y al abrir la canción el metrónomo se ajusta solo.
 - **Tema:** el botón de sol/luna alterna entre oscuro y claro (también dentro del visor). Se recuerda en el dispositivo.
 - **Pad y metrónomo:** el botón de pad dentro del visor toca el tono actual; el metrónomo toma el BPM de la canción. El pad tiene ecualizador (graves, medios, agudos) y ambiente (reverb). El metrónomo acepta cualquier compás de 1/1 a 16/16. En compases simples el BPM marca la figura del denominador; en compuestos (6/8, 9/8, 12/8) el BPM marca el pulso de 3 (negra con puntillo) y suenan los 3 subpulsos. 5/8 = 3+2 y 7/8 = 2+2+3.
-- **Afinador:** guitarra acústica, eléctrica y bajo, con varias afinaciones y modo cromático. Necesita permiso de micrófono (HTTPS o localhost).
+- **Afinador:** cromático (detecta cualquier nota, sirve para cualquier instrumento). Necesita permiso de micrófono (HTTPS o localhost).
 - **Sintetizador:** teclado multitáctil con 5 sonidos, octavas, sostenido, ambiente y brillo.
 - **Sin internet:** se muestra la última copia guardada en el dispositivo (solo lectura).
 
@@ -59,3 +59,6 @@ Copia la URL que termina en `/exec`.
 - Para cambiar el PIN, edita `ADMIN_PIN` en `Code.gs` y publica una nueva versión.
 
 - **Actualizar Code.gs:** esta versión agrega la columna `Compas` (G) en `Canciones` y la acción `getAll`. Pega el nuevo `Code.gs`, ejecuta `initializeSheets` una vez y publica **Nueva versión**. Mientras tanto la app sigue funcionando con la versión anterior del script.
+
+- **Logos:** `logo_app.jpg` es el icono de la pestaña del navegador; `logo_pagina.jpg` (tema claro) y `logo_pagina_2.jpg` (tema oscuro) se ven en el inicio. Súbelos a la raíz junto con los demás archivos.
+- **Compás en Sheets:** la columna `Compas` debe ser texto, si no Sheets convierte "6/8" en fecha. `initializeSheets` ya la deja así; `getSongs` también repara celdas que ya se habían convertido.
