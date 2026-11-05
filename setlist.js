@@ -279,7 +279,7 @@
 
   function renderContent() {
     if (!state.song) return;
-    const lyrics = Music.transposeLyrics(state.song.lyrics, state.semis, baseFlats());
+    const lyrics = Music.transposeLyrics(Music.fromChordSheet(state.song.lyrics), state.semis, baseFlats());
     const box = $('song-content');
     box.classList.toggle('musician', state.mode === 'musician');
     box.classList.toggle('only-chords', state.mode === 'musician' && state.chordsOnly);
