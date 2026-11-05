@@ -17,6 +17,7 @@
     song: null,        // canción abierta en el visor
     semis: 0,          // semitonos transpuestos
     mode: 'singer',    // 'singer' | 'musician'
+    chordsOnly: false, // dentro de Músico: solo acordes por sección, sin letra
     scale: 1,          // tamaño de letra
     date: today(),
     editingId: null,   // null = canción nueva
@@ -35,11 +36,12 @@
     try {
       const p = JSON.parse(localStorage.getItem(PREFS_KEY)) || {};
       if (p.mode === 'musician') state.mode = 'musician';
+      state.chordsOnly = p.chordsOnly === true;
       if (p.scale >= 0.7 && p.scale <= 1.8) state.scale = p.scale;
     } catch (e) { /* noop */ }
   }
   function savePrefs() {
-    try { localStorage.setItem(PREFS_KEY, JSON.stringify({ mode: state.mode, scale: state.scale })); } catch (e) { /* noop */ }
+    try { localStorage.setItem(PREFS_KEY, JSON.stringify({ mode: state.mode, scale: state.scale, chordsOnly: state.chordsOnly })); } catch (e) { /* noop */ }
   }
 
   const keyOptionsHtml = (selected) => Music.keyOptions()
@@ -159,7 +161,7 @@
     $('song-key').innerHTML = keyOptionsHtml(Music.canonicalKey(song ? song.originalKey : 'C'));
     $('song-bpm').value = song ? song.bpm : 120;
     $('song-ts').innerHTML = tsOptionsHtml(song ? song.timeSig : '4/4');
-    $('song-lyrics').value = song ? song.lyrics : '';
+    $('song-lyrics').value = song ? Music.toChordSheet(song.lyrics) : '';
     $('song-dialog').showModal();
   }
 
@@ -170,7 +172,7 @@
       originalKey: $('song-key').value,
       bpm: parseInt($('song-bpm').value, 10) || 120,
       timeSig: $('song-ts').value,
-      lyrics: $('song-lyrics').value
+      lyrics: Music.fromChordSheet($('song-lyrics').value)
     };
     const btn = $('save-song');
     btn.disabled = true;
@@ -248,9 +250,13 @@
   }
 
   function lineHtml(line) {
-    if (!line.trim()) return '<div class="gap"></div>';
+    if (!line.trim()) return state.mode === 'musician' && state.chordsOnly ? '' : '<div class="gap"></div>';
     const section = Music.sectionLabel(line);
     if (section) return `<div class="sec">${esc(section)}</div>`;
+    if (state.mode === 'musician' && state.chordsOnly) {
+      const chords = Music.lineChords(line);
+      return chords.length ? `<div class="ln co-line">${chords.map((c) => `<span class="co">${esc(c)}</span>`).join('')}</div>` : '';
+    }
     if (state.mode === 'musician') return chordLine(line);
     const text = Music.stripChords(line);
     return text.trim() ? `<div class="ln">${esc(text)}</div>` : ''; // líneas solo de acordes no aparecen al cantante
@@ -261,6 +267,10 @@
     const lyrics = Music.transposeLyrics(state.song.lyrics, state.semis, baseFlats());
     const box = $('song-content');
     box.classList.toggle('musician', state.mode === 'musician');
+    box.classList.toggle('only-chords', state.mode === 'musician' && state.chordsOnly);
+    $('chords-only').hidden = state.mode !== 'musician';
+    $('chords-only').classList.toggle('active', state.chordsOnly);
+    $('chords-only').setAttribute('aria-pressed', String(state.chordsOnly));
     box.style.setProperty('--fs', state.scale);
     box.innerHTML = lyrics.trim()
       ? lyrics.split('\n').map(lineHtml).join('')
@@ -584,6 +594,7 @@
     });
     $('view-singer').addEventListener('click', () => setMode('singer'));
     $('view-musician').addEventListener('click', () => setMode('musician'));
+    $('chords-only').addEventListener('click', () => { state.chordsOnly = !state.chordsOnly; savePrefs(); renderContent(); });
     $('transpose-up').addEventListener('click', () => transpose(1));
     $('transpose-down').addEventListener('click', () => transpose(-1));
     $('current-key').addEventListener('click', () => { state.semis = 0; renderContent(); });
