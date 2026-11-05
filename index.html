@@ -16,6 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap">
   <script src="theme.js"></script>
+  <link rel="preload" as="image" href="logo_pagina_2.jpg">
   <link rel="stylesheet" href="styles.css">
 
   <!-- El orden importa -->
@@ -25,11 +26,21 @@
   <script src="database.js" defer></script>
   <script src="pads.js" defer></script>
   <script src="metronome.js" defer></script>
+  <script src="perc.js" defer></script>
   <script src="tuner.js" defer></script>
   <script src="synth.js" defer></script>
   <script src="setlist.js" defer></script>
 </head>
 <body class="on-home">
+
+  <!-- Intro: pantalla negra, el logo aparece con luz y se desvanece para entrar a la app (toca para saltar) -->
+  <div id="splash" class="splash" aria-hidden="true">
+    <div class="splash-glow"></div>
+    <div class="splash-logo">
+      <img class="splash-img base" src="logo_pagina_2.jpg" alt="">
+      <img class="splash-img shine" src="logo_pagina_2.jpg" alt="">
+    </div>
+  </div>
 
   <!-- Iconos (sprite) -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -55,6 +66,7 @@
       <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
       <symbol id="i-metro" viewBox="0 0 24 24"><path d="M8 21h8l-2.2-16h-3.6L8 21zM12 16l4-8"/></symbol>
       <symbol id="i-tuner" viewBox="0 0 24 24"><path d="M8 3v8a4 4 0 0 0 8 0V3M12 15v6M9 21h6"/></symbol>
+      <symbol id="i-drum" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="8" ry="3"/><path d="M4 9v7c0 1.7 3.6 3 8 3s8-1.3 8-3V9M4 12.5c0 1.7 3.6 3 8 3s8-1.3 8-3M7 3l4 5M17 3l-4 5"/></symbol>
       <symbol id="i-keys" viewBox="0 0 24 24"><path d="M3 6h18v12H3zM9 6v12M15 6v12"/><path d="M7.5 6v6M13.5 6v6" stroke-width="3"/></symbol>
     </defs>
   </svg>
@@ -118,6 +130,11 @@
             <span class="menu-text"><span class="menu-title">Metrónomo</span><span class="menu-sub">Cualquier compás y tap tempo</span></span>
             <svg class="i chev"><use href="#i-chevron"/></svg>
           </button>
+          <button class="menu-item" data-go="tools" data-focus="tool-perc">
+            <span class="menu-ico"><svg class="i"><use href="#i-drum"/></svg></span>
+            <span class="menu-text"><span class="menu-title">Percusión</span><span class="menu-sub">Ritmos worship: balada, medio tiempo, 6/8</span></span>
+            <svg class="i chev"><use href="#i-chevron"/></svg>
+          </button>
           <button class="menu-item" data-go="tools" data-focus="tool-tuner">
             <span class="menu-ico"><svg class="i"><use href="#i-tuner"/></svg></span>
             <span class="menu-text"><span class="menu-title">Afinador</span><span class="menu-sub">Cromático, para cualquier instrumento</span></span>
@@ -162,6 +179,7 @@
         <div id="tool-tabs" class="seg tool-tabs" role="tablist" aria-label="Herramientas">
           <button type="button" data-tool="tool-pad" class="active">Pad</button>
           <button type="button" data-tool="tool-metro">Metrónomo</button>
+          <button type="button" data-tool="tool-perc">Percusión</button>
           <button type="button" data-tool="tool-tuner">Afinador</button>
           <button type="button" data-tool="tool-synth">Sinte</button>
         </div>
@@ -240,6 +258,11 @@
             <button type="button" class="chip" data-num="12" data-den="8">12/8</button>
           </div>
 
+          <div id="compound-mode" class="seg compound-mode" role="group" aria-label="Qué marca el BPM en compases compuestos" hidden>
+            <button type="button" data-mode="group">BPM = pulso de 3</button>
+            <button type="button" data-mode="sub">BPM = cada corchea</button>
+          </div>
+
           <p id="meter-hint" class="hint"></p>
 
           <label class="slider-row">
@@ -247,6 +270,46 @@
             <input id="metro-volume" type="range" min="0" max="100" value="70" aria-label="Volumen del metrónomo">
             <output id="metro-volume-value">70%</output>
           </label>
+        </div>
+
+        <div class="tool" id="tool-perc">
+          <div class="tool-head">
+            <h2>Percusión</h2>
+            <button id="perc-toggle" class="round-btn" aria-label="Reproducir percusión" aria-pressed="false">
+              <svg class="i i-play"><use href="#i-play"/></svg>
+              <svg class="i i-stop"><use href="#i-stop"/></svg>
+            </button>
+          </div>
+
+          <div id="perc-patterns" class="chips wrap" role="group" aria-label="Ritmo"></div>
+          <p id="perc-desc" class="hint"></p>
+
+          <div class="bpm-stage perc-stage">
+            <button id="perc-bpm-down" class="icon-btn lg" aria-label="Bajar 1 BPM"><svg class="i"><use href="#i-minus"/></svg></button>
+            <div class="bpm-readout">
+              <input id="perc-bpm-input" type="number" inputmode="numeric" min="40" max="240" value="72" aria-label="BPM de la percusión">
+              <span>BPM</span>
+            </div>
+            <button id="perc-bpm-up" class="icon-btn lg" aria-label="Subir 1 BPM"><svg class="i"><use href="#i-plus"/></svg></button>
+          </div>
+
+          <div id="perc-dots" class="beat-dots" aria-hidden="true"></div>
+          <input id="perc-bpm-slider" class="wide-slider" type="range" min="40" max="240" value="72" aria-label="Ajustar BPM de la percusión">
+          <p id="perc-hint" class="hint"></p>
+
+          <div class="metro-row">
+            <button id="perc-sync" class="btn" type="button">BPM del metrónomo</button>
+            <button id="perc-fill" class="btn" type="button" aria-pressed="false">Relleno</button>
+          </div>
+
+          <div id="perc-mutes" class="chips wrap" role="group" aria-label="Instrumentos"></div>
+
+          <label class="slider-row"><span>Volumen</span>
+            <input id="perc-volume" type="range" min="0" max="100" value="80" aria-label="Volumen de la percusión">
+            <output id="perc-volume-value">80%</output></label>
+          <label class="slider-row"><span>Ambiente</span>
+            <input id="perc-reverb" type="range" min="0" max="100" value="25" aria-label="Ambiente de la percusión">
+            <output id="perc-reverb-value">25%</output></label>
         </div>
 
         <div class="tool" id="tool-tuner">
@@ -441,5 +504,18 @@
   </dialog>
 
   <div id="toast-root" class="toast-root" aria-live="polite"></div>
+
+  <script>
+    /* Intro: se retira sola al terminar la animación; tocar la pantalla la salta */
+    (function () {
+      var el = document.getElementById('splash');
+      if (!el) return;
+      var done = false;
+      function remove() { if (done) return; done = true; el.remove(); }
+      el.addEventListener('animationend', function (e) { if (e.animationName === 'splash-out') remove(); });
+      el.addEventListener('click', function () { el.classList.add('skip'); setTimeout(remove, 450); });
+      setTimeout(remove, 6000); // seguro por si el navegador no dispara animationend
+    })();
+  </script>
 </body>
 </html>
