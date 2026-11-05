@@ -115,6 +115,70 @@
       CHORD_RE.test(c) ? '[' + transposeChord(c, n, flats) + ']' : all);
   }
 
+  // ---------- Hoja de acordes (acordes arriba de la letra) <-> formato interno [C]letra ----------
+  /** Línea formada solo por acordes separados por espacios ("C   Am   F") */
+  function isChordLine(line) {
+    const t = String(line).trim();
+    return t !== '' && t.split(/\s+/).every((tok) => CHORD_RE.test(tok));
+  }
+
+  /** Convierte lo que escribe el usuario (acordes arriba de la letra) al formato interno con corchetes. */
+  function fromChordSheet(text) {
+    const lines = String(text || '').replace(/\r/g, '').split('\n');
+    const isLyric = (l) => l !== undefined && l.trim() !== '' && !isChordLine(l) && sectionLabel(l) === null;
+    const out = [];
+    for (let i = 0; i < lines.length; i++) {
+      const l = lines[i];
+      if (!isChordLine(l)) { out.push(l); continue; }
+      const found = [];
+      const re = /\S+/g;
+      let m;
+      while ((m = re.exec(l)) !== null) found.push({ chord: m[0], at: m.index });
+      if (!isLyric(lines[i + 1])) { out.push(found.map((f) => '[' + f.chord + ']').join(' ')); continue; }
+      let lyric = lines[++i].replace(/\s+$/, '');
+      const need = found[found.length - 1].at;
+      if (lyric.length < need) lyric += ' '.repeat(need - lyric.length);
+      for (let k = found.length - 1; k >= 0; k--) {
+        lyric = lyric.slice(0, found[k].at) + '[' + found[k].chord + ']' + lyric.slice(found[k].at);
+      }
+      out.push(lyric);
+    }
+    return out.join('\n');
+  }
+
+  /** Convierte el formato interno a "acordes arriba de la letra" para editarlo. */
+  function toChordSheet(lyrics) {
+    const lines = String(lyrics || '').replace(/\r/g, '').split('\n');
+    const out = [];
+    lines.forEach((line, i) => {
+      if (sectionLabel(line) !== null) { out.push(line); return; }
+      const segs = parseLine(line);
+      if (!segs.some((s) => s.chord)) { out.push(line); return; }
+      let text = '', chordLine = '';
+      segs.forEach((s) => {
+        if (s.chord) {
+          let p = text.length;
+          if (chordLine.length > 0 && chordLine.length >= p) p = chordLine.length + 1;
+          chordLine += ' '.repeat(Math.max(0, p - chordLine.length)) + s.chord;
+        }
+        text += s.text;
+      });
+      if (text.trim() === '') {
+        out.push(segs.filter((s) => s.chord).map((s) => s.chord).join('  '));
+        const next = lines[i + 1];
+        if (next !== undefined && next.trim() !== '' && sectionLabel(next) === null && stripChords(next).trim() !== '') out.push('');
+        return;
+      }
+      out.push(chordLine, text.replace(/\s+$/, ''));
+    });
+    return out.join('\n');
+  }
+
+  /** Acordes de una línea, en orden (para la vista "solo acordes") */
+  function lineChords(line) {
+    return parseLine(line).filter((s) => s.chord).map((s) => s.chord);
+  }
+
   const TIME_SIGS = ['4/4', '3/4', '2/4', '6/8', '12/8', '9/8', '5/4', '7/8', '5/8', '2/2', '3/8'];
 
   /** "6/8" -> { beats: 6, den: 8 } (por defecto 4/4) */
@@ -127,6 +191,6 @@
   window.Music = {
     TIME_SIGS, parseTimeSig, DISPLAY, CHORD_RE, pitchClass, useFlats, transposeNote, transposeChord,
     semitonesBetween, canonicalKey, keyOptions, parseLine, toGroups,
-    stripChords, sectionLabel, transposeLyrics
+    stripChords, sectionLabel, transposeLyrics, isChordLine, fromChordSheet, toChordSheet, lineChords
   };
 })();
