@@ -267,9 +267,11 @@
       row = [];
     };
     lyrics.split('\n').forEach((line) => {
-      const section = Music.sectionLabel(line);
-      if (section) { flush(); out.push(`<div class="sec">${esc(section)}</div>`); }
-      else row.push(...Music.lineChords(line));
+      // Título: [Intro] solo en su línea, o al inicio de la línea seguido de acordes ("[Intro] [C] [Am]")
+      const head = line.match(/^\s*\[([^\]]+)\]/);
+      const title = head && !Music.CHORD_RE.test(head[1].trim()) ? head[1].trim() : null;
+      if (title) { flush(); out.push(`<div class="sec">${esc(title)}</div>`); }
+      row.push(...Music.lineChords(line));
     });
     flush();
     return out.length ? out.join('') : '<p class="empty">Esta canción aún no tiene acordes.</p>';
