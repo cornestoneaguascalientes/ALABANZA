@@ -353,6 +353,9 @@
         <button id="view-singer" type="button" class="active">Cantante</button>
         <button id="view-musician" type="button">Músico</button>
       </div>
+      <div class="seg" role="group" aria-label="Solo acordes">
+        <button id="chords-only" type="button" aria-pressed="false" hidden>Solo acordes</button>
+      </div>
 
       <div class="stepper" role="group" aria-label="Transponer">
         <button id="transpose-down" type="button" aria-label="Bajar un semitono"><svg class="i"><use href="#i-minus"/></svg></button>
@@ -414,8 +417,8 @@
       </div>
       <label class="field">
         <span>Letra con acordes</span>
-        <textarea id="song-lyrics" rows="12" spellcheck="false" placeholder="[Verso]&#10;[C]Gran[Am]de es el [F]Señor&#10;[G]Y muy [C]digno de [Am]loar"></textarea>
-        <small>Acordes entre corchetes justo antes de la sílaba. Una línea sola como [Coro] crea un título de sección.</small>
+        <textarea id="song-lyrics" rows="12" wrap="off" spellcheck="false" placeholder="[Intro]&#10;C   Am   F   G&#10;&#10;[Verso 1]&#10;C        Am     F&#10;Grande es el Señor&#10;G          C     Am&#10;Y muy digno de loar"></textarea>
+        <small>Escribe los acordes en una línea arriba de la letra, cada uno justo sobre la sílaba donde cambia. Una línea sola como [Coro] crea un título de sección. Una línea de solo acordes (intro) déjala seguida de un renglón vacío.</small>
       </label>
       <div class="dlg-actions">
         <button type="button" id="cancel-song" class="btn">Cancelar</button>
