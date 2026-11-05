@@ -463,9 +463,18 @@ body.on-home #view-title { display: none; }
 .compound-mode { display: flex; width: 100%; margin-top: 14px; }
 .compound-mode button { flex: 1; font-size: 13px; color: var(--muted); }
 .compound-mode button.active { background: var(--white); color: var(--bg); }
-.perc-stage { margin-top: 20px; }
-#perc-fill.active { background: var(--white); color: var(--bg); border-color: var(--white); }
-#perc-mutes { margin-top: 18px; }
+.perc-pads { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.perc-pad {
+  position: relative; height: 104px; border-radius: 16px; border: 1px solid var(--line-2); background: var(--s1);
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  font-size: 18px; font-weight: 600; touch-action: none; -webkit-touch-callout: none;
+  transition: background .08s, color .08s, transform .08s;
+}
+.perc-pad.on { background: var(--white); color: var(--bg); border-color: var(--white); transform: scale(.97); }
+.perc-name { padding: 0 8px; }
+.perc-key { position: absolute; right: 10px; bottom: 6px; font-size: 11px; font-weight: 500; color: var(--dim); }
+.perc-pad.on .perc-key { color: var(--bg); }
+@media (min-width: 560px) { .perc-pads { grid-template-columns: repeat(3, 1fr); } }
 
 /* ---------- Intro con el logo ---------- */
 .splash {
