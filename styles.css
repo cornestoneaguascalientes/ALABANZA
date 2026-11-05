@@ -480,25 +480,17 @@ body.on-home #view-title { display: none; }
   background: radial-gradient(circle, rgba(255, 255, 255, .20) 0%, rgba(255, 255, 255, .07) 20%, transparent 45%);
   animation: splash-glow 3.4s ease-out .3s forwards;
 }
-.splash-logo { position: relative; width: min(80vw, 440px); animation: splash-logo 1.5s cubic-bezier(.2, .7, .2, 1) .5s both; }
-.splash-img { display: block; width: 100%; height: auto; mix-blend-mode: screen; }
-.splash-img.base { opacity: .55; }
-.splash-img.shine {
-  position: absolute; inset: 0;
-  -webkit-mask-image: linear-gradient(105deg, transparent 38%, #000 50%, transparent 62%);
-          mask-image: linear-gradient(105deg, transparent 38%, #000 50%, transparent 62%);
-  -webkit-mask-size: 300% 100%; mask-size: 300% 100%;
-  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
-  -webkit-mask-position: 100% 0; mask-position: 100% 0;
-  animation: splash-shine 1.7s ease-in-out 1.3s forwards;
+.splash-logo {
+  position: relative; display: block; width: min(78vw, 440px); height: auto;
+  animation: splash-logo 1.5s cubic-bezier(.2, .7, .2, 1) .5s both, splash-bloom 1.8s ease-in-out 1.6s both;
 }
 @keyframes splash-logo {
-  from { opacity: 0; transform: scale(.93); filter: blur(14px) brightness(.5); }
+  from { opacity: 0; transform: scale(.93); filter: blur(14px) brightness(.6); }
   to   { opacity: 1; transform: scale(1);   filter: blur(0) brightness(1); }
 }
-@keyframes splash-shine {
-  from { -webkit-mask-position: 100% 0; mask-position: 100% 0; }
-  to   { -webkit-mask-position: 0 0;    mask-position: 0 0; }
+@keyframes splash-bloom {
+  0%, 100% { filter: drop-shadow(0 0 0 rgba(255, 255, 255, 0)); }
+  50%      { filter: drop-shadow(0 0 18px rgba(255, 255, 255, .55)) brightness(1.15); }
 }
 @keyframes splash-glow {
   0%   { opacity: 0;  transform: translate(-50%, -50%) scale(.2); }
@@ -514,6 +506,6 @@ body.on-home #view-title { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .splash { animation-delay: 1.8s; }
   .splash-logo { animation: splash-fade .6s ease .2s both; }
-  .splash-glow, .splash-img.shine { animation: none; display: none; }
+  .splash-glow { animation: none; display: none; }
   @keyframes splash-fade { from { opacity: 0; } to { opacity: 1; } }
 }
