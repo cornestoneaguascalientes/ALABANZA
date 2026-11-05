@@ -1,116 +1,45 @@
 /**
- * PERC.JS - Percusiones estilo worship (Web Audio API, todo sintetizado: no usa archivos de audio)
+ * PERC.JS - Pads de percusión para tocar en pantalla (multitáctil), con sonidos de worship
  *
- * - Ritmos de 4/4, 6/8 y 12/8 pensados para alabanza: balada con cross-stick, medio tiempo,
- *   pop worship, épico (cuatro al piso + pandero), shaker de 16avos, toms tribales y 6/8, 12/8.
- * - Programación por adelantado (igual que el metrónomo) con el timer en un Worker.
- * - BPM: en 4/4 marca la negra; en 6/8 y 12/8 marca el pulso de 3 (negra con puntillo).
- * - Relleno (fill) que entra en el último tiempo del compás y termina con crash.
- * - Se puede silenciar cada instrumento por separado.
+ * - 6 pads por banco, 2 bancos (12 sonidos). Cada pad suena al tocarlo; se pueden tocar varios a la vez.
+ * - Todo sintetizado con Web Audio (sin archivos de audio), con una reverb corta tipo "plate".
+ * - Banco 1: Bombo, Caja, Cross-stick, Pandero, Shaker, Tom grave.
+ * - Banco 2: Aplauso, Crash, Hi-hat, Hi-hat abierto, Tom medio, Tom agudo.
+ * - También se puede tocar con el teclado de la PC (Q W E / A S D).
  */
 (function () {
   'use strict';
 
-  const CONFIG = {
-    MIN_BPM: 40,
-    MAX_BPM: 240,
-    DEFAULT_BPM: 72,
-    LOOKAHEAD: 0.2,
-    TICK_MS: 25,
-    PREFS_KEY: 'alabanza.perc'
-  };
+  const CONFIG = { PREFS_KEY: 'alabanza.perc.v2' };
 
-  // Grupos para poder silenciar instrumentos
-  const GROUP = {
-    kick: 'kick', snare: 'snare', rim: 'snare', clap: 'snare',
-    hat: 'hat', hatO: 'hat', shaker: 'shaker', tamb: 'shaker',
-    tomH: 'tom', tomM: 'tom', tomL: 'tom', crash: 'crash'
-  };
-  const GROUPS = [
-    { id: 'kick', label: 'Bombo' },
-    { id: 'snare', label: 'Caja' },
-    { id: 'hat', label: 'Hi-hat' },
-    { id: 'shaker', label: 'Shaker / pandero' },
-    { id: 'tom', label: 'Toms' }
+  const BANKS = [
+    { name: 'Banco 1', pads: [
+      { v: 'kick', label: 'Bombo', key: 'q' }, { v: 'snare', label: 'Caja', key: 'w' }, { v: 'rim', label: 'Cross-stick', key: 'e' },
+      { v: 'tamb', label: 'Pandero', key: 'a' }, { v: 'shaker', label: 'Shaker', key: 's' }, { v: 'tomL', label: 'Tom grave', key: 'd' }
+    ] },
+    { name: 'Banco 2', pads: [
+      { v: 'clap', label: 'Aplauso', key: 'q' }, { v: 'crash', label: 'Crash', key: 'w' }, { v: 'hat', label: 'Hi-hat', key: 'e' },
+      { v: 'hatO', label: 'Hi-hat abierto', key: 'a' }, { v: 'tomM', label: 'Tom medio', key: 's' }, { v: 'tomH', label: 'Tom agudo', key: 'd' }
+    ] }
   ];
-
-  // Notación: x = golpe fuerte, o = suave, . = silencio.  Cada cadena es un compás.
-  // steps = pasos por compás; perBeat = pasos por pulso (4 en 4/4 = semicorcheas; 3 en 6/8 y 12/8 = corcheas)
-  const PATTERNS = [
-    { id: 'balada', name: 'Balada', meter: '4/4', steps: 16, perBeat: 4,
-      desc: 'Cross-stick en 2 y 4, hi-hat en corcheas. Suave, para momentos de adoración.',
-      t: { kick: 'x.......x.x.....', rim: '....x.......x...', hat: 'x.o.x.o.x.o.x.o.' } },
-    { id: 'medio', name: 'Medio tiempo', meter: '4/4', steps: 16, perBeat: 4,
-      desc: 'La caja cae en el 3 (feel lento y amplio). Muy usado en canciones de adoración.',
-      t: { kick: 'x.....x.......x.', snare: '........x.......', hat: 'x.x.x.x.x.x.x.x.', shaker: 'ooooooooooooooo.' } },
-    { id: 'pop', name: 'Pop worship', meter: '4/4', steps: 16, perBeat: 4,
-      desc: 'Bombo y caja clásicos con hi-hat en corcheas. Para alabanza con más energía.',
-      t: { kick: 'x.....x.x.......', snare: '....x.......x...', hat: 'x.o.x.o.x.o.x.o.', tamb: '..o...o...o...o.' } },
-    { id: 'epico', name: 'Épico', meter: '4/4', steps: 16, perBeat: 4,
-      desc: 'Bombo en cada tiempo, aplausos y pandero. Para subir el cierre o el coro final.',
-      t: { kick: 'x...x...x...x...', clap: '....x.......x...', hatO: '..o...o...o...o.', tamb: 'x.x.x.x.x.x.x.x.' } },
-    { id: 'shaker', name: 'Shaker 16avos', meter: '4/4', steps: 16, perBeat: 4,
-      desc: 'Solo shaker con un bombo suave. Para entrar o sostener sin llenar.',
-      t: { kick: 'o.......o.......', shaker: 'xooooxooxooooxoo' } },
-    { id: 'toms', name: 'Toms tribales', meter: '4/4', steps: 16, perBeat: 4,
-      desc: 'Toms graves marcando el pulso con shaker. Da peso en secciones de poder.',
-      t: { kick: 'x...............', tomL: '....x.......x.x.', tomM: '..........x.....', shaker: 'x.o.x.o.x.o.x.o.' } },
-    { id: 'seis8', name: 'Balada 6/8', meter: '6/8', steps: 6, perBeat: 3,
-      desc: 'Bombo en 1, cross-stick en 4 y hi-hat en corcheas. BPM = pulso de 3.',
-      t: { kick: 'x.....', rim: '...x..', hat: 'xooxoo' } },
-    { id: 'doce8', name: 'Balada 12/8', meter: '12/8', steps: 12, perBeat: 3,
-      desc: 'Feel de 12/8: caja en los tiempos 2 y 4, bombo en 1 y 3. BPM = pulso de 3.',
-      t: { kick: 'x.....x.....', snare: '...x.....x..', hat: 'xooxooxooxoo' } }
-  ];
-
-  // Relleno: último tiempo del compás (4 pasos en 4/4, 3 pasos en 6/8 y 12/8) + crash en el 1 siguiente
-  const FILLS = {
-    4: ['snare', 'tomH', 'tomM', 'tomL'],
-    3: ['snare', 'tomM', 'tomL']
-  };
 
   let ctx = null, out = null, send = null, noise = null, master = null;
-  let playing = false, ticker = null, rafId = null;
-  let bpm = CONFIG.DEFAULT_BPM, volume = 0.8, reverb = 25;
-  let patternId = 'balada';
-  let step = 0, bar = 0, nextTime = 0, queue = [];
-  let fillArmed = false, fillBar = -1, crashNext = false;
-  const mutes = {};
+  let volume = 0.85, reverb = 30, bank = 0;
+  const pointers = new Map(); // pointerId -> pad en pantalla
 
   const $ = (id) => document.getElementById(id);
   const clamp = (v, a, b) => Math.max(a, Math.min(b, Number(v) || 0));
-  const pattern = () => PATTERNS.find((p) => p.id === patternId) || PATTERNS[0];
 
-  // ---------- Preferencias ----------
   function loadPrefs() {
     try {
       const p = JSON.parse(localStorage.getItem(CONFIG.PREFS_KEY)) || {};
-      if (p.bpm) bpm = clamp(p.bpm, CONFIG.MIN_BPM, CONFIG.MAX_BPM);
       if ('volume' in p) volume = clamp(p.volume, 0, 1);
       if ('reverb' in p) reverb = clamp(p.reverb, 0, 100);
-      if (PATTERNS.some((x) => x.id === p.pattern)) patternId = p.pattern;
-      if (p.mutes) Object.keys(p.mutes).forEach((k) => { mutes[k] = !!p.mutes[k]; });
+      if (p.bank === 0 || p.bank === 1) bank = p.bank;
     } catch (e) { /* noop */ }
   }
   function savePrefs() {
-    try { localStorage.setItem(CONFIG.PREFS_KEY, JSON.stringify({ bpm, volume, reverb, pattern: patternId, mutes })); } catch (e) { /* noop */ }
-  }
-
-  // ---------- Timer en Worker (con respaldo a setInterval) ----------
-  function createTicker(fn) {
-    try {
-      const src = 'let t=null;onmessage=e=>{if(e.data==="start"){clearInterval(t);t=setInterval(()=>postMessage(0),' +
-        CONFIG.TICK_MS + ')}else{clearInterval(t)}}';
-      const worker = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
-      worker.onmessage = fn;
-      return { start: () => worker.postMessage('start'), stop: () => worker.postMessage('stop') };
-    } catch (e) {
-      let id = null;
-      return {
-        start: () => { clearInterval(id); id = setInterval(fn, CONFIG.TICK_MS); },
-        stop: () => clearInterval(id)
-      };
-    }
+    try { localStorage.setItem(CONFIG.PREFS_KEY, JSON.stringify({ volume, reverb, bank })); } catch (e) { /* noop */ }
   }
 
   // ---------- Audio ----------
@@ -118,12 +47,11 @@
     ctx = AudioCore.context();
     if (master) return ctx;
 
-    // Ruido blanco de 1 s que usan casi todos los sonidos
     noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
     const d = noise.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
 
-    // Reverb corta tipo "plate" para caja, toms, aplausos y crash
+    // Reverb corta tipo "plate" (cola de 1.6 s que se oscurece)
     const len = Math.floor(ctx.sampleRate * 1.6);
     const ir = ctx.createBuffer(2, len, ctx.sampleRate);
     for (let c = 0; c < 2; c++) {
@@ -143,7 +71,7 @@
     master = ctx.createGain();
     const comp = ctx.createDynamicsCompressor();
     comp.threshold.value = -12; comp.knee.value = 18; comp.ratio.value = 4;
-    comp.attack.value = 0.005; comp.release.value = 0.2;
+    comp.attack.value = 0.003; comp.release.value = 0.2;
 
     out.connect(master);
     send.connect(conv); conv.connect(master);
@@ -232,101 +160,47 @@
     }
   };
 
-  function hit(name, t, v) {
-    if (mutes[GROUP[name]] && name !== 'crash') return;
-    if (name === 'crash' && mutes.tom && mutes.snare) return;
-    VOICES[name](t, v);
-  }
-
-  // ---------- Programación ----------
-  const beatsPerBar = () => { const p = pattern(); return p.steps / p.perBeat; };
-  const stepDur = () => 60 / bpm / pattern().perBeat;
-
-  function scheduleStep(time, st, barNo) {
-    const p = pattern();
-    const lastBeat = p.steps - p.perBeat;
-
-    // Crash (con bombo) en el 1 después de un relleno
-    if (st === 0 && crashNext) { hit('crash', time, 1); hit('kick', time, 1); crashNext = false; }
-
-    const inFill = fillBar === barNo && st >= lastBeat;
-    if (inFill) {
-      hit(FILLS[p.perBeat][st - lastBeat], time, 0.95);
-    } else {
-      Object.keys(p.t).forEach((name) => {
-        const c = p.t[name][st];
-        if (c === '.' || c === undefined) return;
-        hit(name, time, c === 'x' ? 1 : 0.5);
-      });
-    }
-    if (st === p.steps - 1 && fillBar === barNo) { crashNext = true; fillBar = -1; }
-  }
-
-  function scheduler() {
-    const c = AudioCore.context();
-    if (nextTime < c.currentTime - 0.05) nextTime = c.currentTime + 0.02;
-    const p = pattern();
-    while (nextTime < c.currentTime + CONFIG.LOOKAHEAD) {
-      // El relleno que se arma entra a partir del compás en curso
-      if (step === 0 && fillArmed) { fillBar = bar; fillArmed = false; renderFill(); }
-      scheduleStep(nextTime, step, bar);
-      queue.push({ t: nextTime, beat: Math.floor(step / p.perBeat) });
-      if (queue.length > 64) queue.shift();
-      nextTime += stepDur();
-      step++;
-      if (step >= p.steps) { step = 0; bar++; }
-    }
-  }
-
-  function draw() {
-    if (!playing) return;
-    const c = AudioCore.context();
-    let cur = null;
-    while (queue.length && queue[0].t <= c.currentTime) cur = queue.shift();
-    if (cur) document.querySelectorAll('#perc-dots .dot').forEach((d, i) => d.classList.toggle('on', i === cur.beat));
-    rafId = requestAnimationFrame(draw);
-  }
-
-  // ---------- Control ----------
-  function start() {
-    if (playing) return;
+  /** Toca un sonido al instante. Una pequeña variación de fuerza lo hace sonar menos "de máquina". */
+  function hit(name) {
     ensureAudio();
-    playing = true;
-    step = 0; bar = 0; queue = []; fillBar = -1; crashNext = false;
-    nextTime = ctx.currentTime + 0.08;
-    if (!ticker) ticker = createTicker(scheduler);
-    scheduler();
-    ticker.start();
-    rafId = requestAnimationFrame(draw);
-    AudioCore.setActive('perc', true);
-    render();
+    const v = 0.92 + Math.random() * 0.16;
+    VOICES[name](ctx.currentTime + 0.005, v);
   }
 
-  function stop() {
-    if (!playing) return;
-    playing = false;
-    if (ticker) ticker.stop();
-    cancelAnimationFrame(rafId);
-    queue = []; fillArmed = false; fillBar = -1;
-    AudioCore.setActive('perc', false);
-    render(); renderFill();
+  // ---------- Pads en pantalla ----------
+  const padEl = (i) => document.querySelector(`#perc-pads [data-i="${i}"]`);
+
+  function buildPads() {
+    const box = $('perc-pads');
+    box.innerHTML = BANKS[bank].pads.map((p, i) =>
+      `<button type="button" class="perc-pad" data-i="${i}" aria-label="${p.label}">
+        <span class="perc-name">${p.label}</span><span class="perc-key">${p.key.toUpperCase()}</span></button>`).join('');
+    document.querySelectorAll('#perc-banks [data-bank]').forEach((b) => {
+      const on = Number(b.dataset.bank) === bank;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-pressed', String(on));
+    });
   }
 
-  const toggle = () => (playing ? stop() : start());
-
-  function setBPM(v) {
-    const n = Math.round(Number(v));
-    if (!isFinite(n) || n <= 0) { render(); return; }
-    bpm = clamp(n, CONFIG.MIN_BPM, CONFIG.MAX_BPM);
-    savePrefs(); render();
+  function flash(el) {
+    if (!el) return;
+    el.classList.add('on');
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.classList.remove('on'), 140);
   }
 
-  function setPattern(id) {
-    if (!PATTERNS.some((p) => p.id === id)) return;
-    patternId = id;
-    step = 0; bar = 0; fillArmed = false; fillBar = -1; crashNext = false; queue = [];
-    if (playing) nextTime = AudioCore.context().currentTime + 0.05;
-    savePrefs(); render(); renderDots(); renderFill();
+  function trigger(i) {
+    const p = BANKS[bank].pads[i];
+    if (!p) return;
+    hit(p.v);
+    flash(padEl(i));
+  }
+
+  function setBank(n) {
+    bank = n ? 1 : 0;
+    pointers.clear();
+    buildPads();
+    savePrefs();
   }
 
   function setVolume(v) {
@@ -334,102 +208,38 @@
     if (master) master.gain.setTargetAtTime(volume, ctx.currentTime, 0.05);
     savePrefs();
   }
-
   function setReverb(v) {
     reverb = clamp(v, 0, 100);
     if (send) send.gain.setTargetAtTime(reverb / 100, ctx.currentTime, 0.05);
     savePrefs();
   }
 
-  function toggleMute(id) { mutes[id] = !mutes[id]; savePrefs(); renderMutes(); }
+  const percActive = () => {
+    const t = $('tool-perc'), v = $('tools-view');
+    return t && v && t.classList.contains('active') && v.classList.contains('active');
+  };
 
-  function armFill() {
-    if (!playing) { start(); }
-    fillArmed = !fillArmed;
-    renderFill();
-  }
-
-  /** Toma el BPM del metrónomo (que a su vez toma el de la canción abierta) */
-  function syncFromMetronome() {
-    if (!window.Metronome) return;
-    const p = pattern();
-    const compoundPattern = p.perBeat === 3;
-    let b = Metronome.getBPM();
-    // Si el metrónomo cuenta corcheas en compuesto, el pulso de 3 es BPM/3
-    if (compoundPattern && Metronome.isCompound() && Metronome.isSubBeat()) b = b / 3;
-    setBPM(b);
-    if (window.UI) UI.toast('BPM: ' + bpm);
-  }
-
-  // ---------- UI ----------
-  function renderDots() {
-    const box = $('perc-dots');
-    if (!box) return;
-    const n = beatsPerBar();
-    box.innerHTML = Array.from({ length: n }, (_, i) => `<span class="dot${i === 0 ? ' accent' : ''}"></span>`).join('');
-  }
-
-  function renderMutes() {
-    const box = $('perc-mutes');
-    if (!box) return;
-    box.innerHTML = GROUPS.map((g) =>
-      `<button type="button" class="chip${mutes[g.id] ? '' : ' active'}" data-g="${g.id}" aria-pressed="${!mutes[g.id]}">${g.label}</button>`).join('');
-  }
-
-  function renderFill() {
-    const b = $('perc-fill');
-    if (!b) return;
-    b.classList.toggle('active', fillArmed);
-    b.setAttribute('aria-pressed', String(fillArmed));
-  }
-
-  function render() {
-    const input = $('perc-bpm-input');
-    if (input && document.activeElement !== input) input.value = bpm;
-    const slider = $('perc-bpm-slider');
-    if (slider) slider.value = bpm;
-    const t = $('perc-toggle');
-    if (t) {
-      t.classList.toggle('playing', playing);
-      t.setAttribute('aria-pressed', String(playing));
-      t.setAttribute('aria-label', playing ? 'Detener percusión' : 'Reproducir percusión');
-    }
-    const box = $('perc-patterns');
-    if (box && !box.children.length) {
-      box.innerHTML = PATTERNS.map((p) =>
-        `<button type="button" class="chip" data-p="${p.id}">${p.name}</button>`).join('');
-    }
-    document.querySelectorAll('#perc-patterns [data-p]').forEach((b) => {
-      const on = b.dataset.p === patternId;
-      b.classList.toggle('active', on);
-      b.setAttribute('aria-pressed', String(on));
-    });
-    const p = pattern();
-    const desc = $('perc-desc');
-    if (desc) desc.textContent = p.meter + ' · ' + p.desc;
-    const hint = $('perc-hint');
-    if (hint) hint.textContent = 'BPM = ' + (p.perBeat === 3 ? 'negra con puntillo (pulso de 3)' : 'negra');
-  }
-
-  AudioCore.register('perc', { start, stop });
   loadPrefs();
 
   document.addEventListener('DOMContentLoaded', () => {
-    if (!$('perc-toggle')) return;
-    $('perc-toggle').addEventListener('click', toggle);
-    $('perc-bpm-up').addEventListener('click', () => setBPM(bpm + 1));
-    $('perc-bpm-down').addEventListener('click', () => setBPM(bpm - 1));
-    $('perc-bpm-slider').addEventListener('input', (e) => setBPM(e.target.value));
-    $('perc-bpm-input').addEventListener('change', (e) => setBPM(e.target.value));
-    $('perc-sync').addEventListener('click', syncFromMetronome);
-    $('perc-fill').addEventListener('click', armFill);
-    $('perc-patterns').addEventListener('click', (e) => {
-      const b = e.target.closest('[data-p]');
-      if (b) setPattern(b.dataset.p);
+    const box = $('perc-pads');
+    if (!box) return;
+    buildPads();
+
+    // Multitáctil: cada dedo toca su pad; un pad se activa al presionar (sin esperar a soltar)
+    box.addEventListener('pointerdown', (e) => {
+      const el = e.target.closest('.perc-pad');
+      if (!el) return;
+      e.preventDefault();
+      pointers.set(e.pointerId, el);
+      trigger(Number(el.dataset.i));
     });
-    $('perc-mutes').addEventListener('click', (e) => {
-      const b = e.target.closest('[data-g]');
-      if (b) toggleMute(b.dataset.g);
+    ['pointerup', 'pointercancel'].forEach((t) => box.addEventListener(t, (e) => pointers.delete(e.pointerId)));
+    box.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    $('perc-banks').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-bank]');
+      if (b) setBank(Number(b.dataset.bank));
     });
 
     const vol = $('perc-volume'), volOut = $('perc-volume-value');
@@ -440,13 +250,14 @@
     rev.value = reverb; revOut.textContent = reverb + '%';
     rev.addEventListener('input', () => { setReverb(rev.value); revOut.textContent = rev.value + '%'; });
 
-    renderMutes(); renderDots(); renderFill(); render();
+    // Teclado de la computadora
+    document.addEventListener('keydown', (e) => {
+      if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || !percActive()) return;
+      if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) || document.querySelector('dialog[open]')) return;
+      const i = BANKS[bank].pads.findIndex((p) => p.key === e.key.toLowerCase());
+      if (i !== -1) trigger(i);
+    });
   });
 
-  window.Perc = {
-    start, stop, toggle, setBPM, setPattern, setVolume,
-    getBPM: () => bpm,
-    isPlaying: () => playing,
-    PATTERNS
-  };
+  window.Perc = { trigger, setBank, setVolume, setReverb };
 })();
