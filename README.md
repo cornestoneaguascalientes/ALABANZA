@@ -8,7 +8,7 @@ Todos los archivos van sueltos en la raíz del repositorio (sin carpetas):
 
 ```
 index.html  styles.css
-theme.js  music.js  ui.js  audio-core.js  database.js  pads.js  metronome.js  tuner.js  synth.js  setlist.js
+theme.js  music.js  ui.js  audio-core.js  database.js  pads.js  metronome.js  perc.js  tuner.js  synth.js  setlist.js
 Code.gs   (NO se sube a GitHub; vive en Apps Script)
 .gitignore
 ```
@@ -45,10 +45,13 @@ Copia la URL que termina en `/exec`.
 - **Formato de letra:** acordes entre corchetes justo antes de la sílaba: `[C]Gran[Am]de es el [F]Señor`. Una línea sola como `[Coro]` crea un título de sección. Se aceptan acordes como `Cmaj7`, `G7sus4` y `C/E`.
 - **Visor:** vista Cantante (solo letra) o Músico (acordes sobre la sílaba), transpositor ±1 semitono (toca el tono para volver al original), tamaño de letra y pantalla siempre encendida mientras está abierto.
 - **Setlist:** cada canción tiene su tono para el servicio. Al abrirla desde el setlist ya aparece transpuesta a ese tono.
-- **Inicio:** al abrir la app solo aparece el menú principal (Biblioteca, Setlist, Pad, Metrónomo, Afinador y Sintetizador); ahí también aparece el logo, que cambia según el tema. Las barras de navegación aparecen al entrar a cualquier sección.
+- **Inicio:** al abrir la app solo aparece el menú principal (Biblioteca, Setlist, Pad, Metrónomo, Percusión, Afinador y Sintetizador); ahí también aparece el logo, que cambia según el tema. Las barras de navegación aparecen al entrar a cualquier sección.
 - **Compás:** cada canción guarda su compás (4/4, 6/8, etc.). Se ve junto al BPM y al abrir la canción el metrónomo se ajusta solo.
 - **Tema:** el botón de sol/luna alterna entre oscuro y claro (también dentro del visor). Se recuerda en el dispositivo.
 - **Pad y metrónomo:** el botón de pad dentro del visor toca el tono actual; el metrónomo toma el BPM de la canción. El pad tiene ecualizador (graves, medios, agudos) y ambiente (reverb). El metrónomo acepta cualquier compás de 1/1 a 16/16. En compases simples el BPM marca la figura del denominador; en compuestos (6/8, 9/8, 12/8) el BPM marca el pulso de 3 (negra con puntillo) y suenan los 3 subpulsos. 5/8 = 3+2 y 7/8 = 2+2+3.
+- **Metrónomo en compases compuestos:** en 6/8, 9/8 y 12/8 aparece un selector. "BPM = pulso de 3" (por defecto) marca la negra con puntillo; "BPM = cada corchea" es como cuentan la mayoría de metrónomos y videos. El mismo número de BPM suena 3 veces más rápido en el primer modo.
+- **Percusión:** ritmos estilo worship (Balada, Medio tiempo, Pop worship, Épico, Shaker 16avos, Toms tribales, Balada 6/8 y 12/8), BPM propio (o "BPM del metrónomo"), botón Relleno (entra en el último tiempo del compás y cierra con crash), silenciar instrumentos, volumen y ambiente. Todo suena sintetizado, sin archivos de audio.
+- **Intro:** al abrir la app aparece el logo oscuro (`logo_pagina_2.jpg`) sobre negro con luz, y se desvanece para entrar. Tocar la pantalla la salta.
 - **Afinador:** cromático (detecta cualquier nota, sirve para cualquier instrumento). Necesita permiso de micrófono (HTTPS o localhost).
 - **Sintetizador:** teclado multitáctil con 5 sonidos, octavas, sostenido, ambiente y brillo.
 - **Sin internet:** se muestra la última copia guardada en el dispositivo (solo lectura).
