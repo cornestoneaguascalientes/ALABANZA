@@ -346,6 +346,13 @@ input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; border-radius
 .ch { font-weight: 700; color: var(--white); font-size: .82em; line-height: 1.3; padding-right: .45em; min-height: 1.3em; }
 .tx { white-space: pre; }
 
+/* Vista músico, solo acordes: una fila de acordes por línea de la canción */
+.song-content.musician.only-chords { font-size: calc(clamp(24px, 6vw, 34px) * var(--fs, 1)); }
+.song-content .co-line { display: flex; flex-wrap: wrap; gap: .1em 1em; color: var(--white); font-weight: 700; line-height: 1.3; margin-bottom: .45em; }
+.song-content .co-line .co { white-space: nowrap; }
+.song-content.only-chords .sec { margin-top: 1.2em; }
+.field textarea { white-space: pre; overflow-x: auto; }
+
 /* ---------- Diálogos y formularios ---------- */
 dialog {
   width: min(92vw, 520px); max-height: 92dvh; margin: auto;
