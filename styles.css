@@ -452,3 +452,68 @@ body.on-home #view-title { display: none; }
 .brand-dark { mix-blend-mode: screen; }
 :root[data-theme="light"] .brand-light { display: block; }
 :root[data-theme="light"] .brand-dark { display: none; }
+
+/* ---------- Pestañas de herramientas: 5 opciones, con scroll horizontal si no caben ---------- */
+.tool-tabs { overflow-x: auto; scrollbar-width: none; }
+.tool-tabs::-webkit-scrollbar { display: none; }
+.tool-tabs button { flex: 1 0 auto; padding: 0 14px; white-space: nowrap; }
+
+/* ---------- Percusión y modo de compás compuesto ---------- */
+.chips.wrap { flex-wrap: wrap; overflow: visible; }
+.compound-mode { display: flex; width: 100%; margin-top: 14px; }
+.compound-mode button { flex: 1; font-size: 13px; color: var(--muted); }
+.compound-mode button.active { background: var(--white); color: var(--bg); }
+.perc-stage { margin-top: 20px; }
+#perc-fill.active { background: var(--white); color: var(--bg); border-color: var(--white); }
+#perc-mutes { margin-top: 18px; }
+
+/* ---------- Intro con el logo ---------- */
+.splash {
+  position: fixed; inset: 0; z-index: 1000; background: #000;
+  display: flex; align-items: center; justify-content: center;
+  animation: splash-out .9s ease 3.4s forwards;
+}
+.splash.skip { animation: splash-skip .4s ease forwards; }
+.splash-glow {
+  position: absolute; left: 50%; top: 50%; width: 120vmax; height: 120vmax;
+  transform: translate(-50%, -50%) scale(.2); opacity: 0; pointer-events: none;
+  background: radial-gradient(circle, rgba(255, 255, 255, .20) 0%, rgba(255, 255, 255, .07) 20%, transparent 45%);
+  animation: splash-glow 3.4s ease-out .3s forwards;
+}
+.splash-logo { position: relative; width: min(80vw, 440px); animation: splash-logo 1.5s cubic-bezier(.2, .7, .2, 1) .5s both; }
+.splash-img { display: block; width: 100%; height: auto; mix-blend-mode: screen; }
+.splash-img.base { opacity: .55; }
+.splash-img.shine {
+  position: absolute; inset: 0;
+  -webkit-mask-image: linear-gradient(105deg, transparent 38%, #000 50%, transparent 62%);
+          mask-image: linear-gradient(105deg, transparent 38%, #000 50%, transparent 62%);
+  -webkit-mask-size: 300% 100%; mask-size: 300% 100%;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  -webkit-mask-position: 100% 0; mask-position: 100% 0;
+  animation: splash-shine 1.7s ease-in-out 1.3s forwards;
+}
+@keyframes splash-logo {
+  from { opacity: 0; transform: scale(.93); filter: blur(14px) brightness(.5); }
+  to   { opacity: 1; transform: scale(1);   filter: blur(0) brightness(1); }
+}
+@keyframes splash-shine {
+  from { -webkit-mask-position: 100% 0; mask-position: 100% 0; }
+  to   { -webkit-mask-position: 0 0;    mask-position: 0 0; }
+}
+@keyframes splash-glow {
+  0%   { opacity: 0;  transform: translate(-50%, -50%) scale(.2); }
+  45%  { opacity: 1;  transform: translate(-50%, -50%) scale(.7); }
+  100% { opacity: .35; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes splash-out {
+  to { opacity: 0; visibility: hidden; transform: scale(1.04); }
+}
+@keyframes splash-skip {
+  to { opacity: 0; visibility: hidden; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .splash { animation-delay: 1.8s; }
+  .splash-logo { animation: splash-fade .6s ease .2s both; }
+  .splash-glow, .splash-img.shine { animation: none; display: none; }
+  @keyframes splash-fade { from { opacity: 0; } to { opacity: 1; } }
+}
