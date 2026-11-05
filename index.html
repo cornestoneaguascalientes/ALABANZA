@@ -129,7 +129,7 @@
           </button>
           <button class="menu-item" data-go="tools" data-focus="tool-perc">
             <span class="menu-ico"><svg class="i"><use href="#i-drum"/></svg></span>
-            <span class="menu-text"><span class="menu-title">Percusión</span><span class="menu-sub">Ritmos worship: balada, medio tiempo, 6/8</span></span>
+            <span class="menu-text"><span class="menu-title">Percusión</span><span class="menu-sub">Pads para tocar: bombo, caja, pandero, shaker</span></span>
             <svg class="i chev"><use href="#i-chevron"/></svg>
           </button>
           <button class="menu-item" data-go="tools" data-focus="tool-tuner">
@@ -272,41 +272,21 @@
         <div class="tool" id="tool-perc">
           <div class="tool-head">
             <h2>Percusión</h2>
-            <button id="perc-toggle" class="round-btn" aria-label="Reproducir percusión" aria-pressed="false">
-              <svg class="i i-play"><use href="#i-play"/></svg>
-              <svg class="i i-stop"><use href="#i-stop"/></svg>
-            </button>
-          </div>
-
-          <div id="perc-patterns" class="chips wrap" role="group" aria-label="Ritmo"></div>
-          <p id="perc-desc" class="hint"></p>
-
-          <div class="bpm-stage perc-stage">
-            <button id="perc-bpm-down" class="icon-btn lg" aria-label="Bajar 1 BPM"><svg class="i"><use href="#i-minus"/></svg></button>
-            <div class="bpm-readout">
-              <input id="perc-bpm-input" type="number" inputmode="numeric" min="40" max="240" value="72" aria-label="BPM de la percusión">
-              <span>BPM</span>
+            <div id="perc-banks" class="seg" role="group" aria-label="Banco de sonidos">
+              <button type="button" data-bank="0" class="active" aria-pressed="true">Banco 1</button>
+              <button type="button" data-bank="1" aria-pressed="false">Banco 2</button>
             </div>
-            <button id="perc-bpm-up" class="icon-btn lg" aria-label="Subir 1 BPM"><svg class="i"><use href="#i-plus"/></svg></button>
           </div>
 
-          <div id="perc-dots" class="beat-dots" aria-hidden="true"></div>
-          <input id="perc-bpm-slider" class="wide-slider" type="range" min="40" max="240" value="72" aria-label="Ajustar BPM de la percusión">
-          <p id="perc-hint" class="hint"></p>
-
-          <div class="metro-row">
-            <button id="perc-sync" class="btn" type="button">BPM del metrónomo</button>
-            <button id="perc-fill" class="btn" type="button" aria-pressed="false">Relleno</button>
-          </div>
-
-          <div id="perc-mutes" class="chips wrap" role="group" aria-label="Instrumentos"></div>
+          <div id="perc-pads" class="perc-pads" aria-label="Pads de percusión"></div>
+          <p class="hint">Toca los pads (puedes usar varios dedos a la vez). En PC: Q W E / A S D.</p>
 
           <label class="slider-row"><span>Volumen</span>
-            <input id="perc-volume" type="range" min="0" max="100" value="80" aria-label="Volumen de la percusión">
-            <output id="perc-volume-value">80%</output></label>
+            <input id="perc-volume" type="range" min="0" max="100" value="85" aria-label="Volumen de la percusión">
+            <output id="perc-volume-value">85%</output></label>
           <label class="slider-row"><span>Ambiente</span>
-            <input id="perc-reverb" type="range" min="0" max="100" value="25" aria-label="Ambiente de la percusión">
-            <output id="perc-reverb-value">25%</output></label>
+            <input id="perc-reverb" type="range" min="0" max="100" value="30" aria-label="Ambiente de la percusión">
+            <output id="perc-reverb-value">30%</output></label>
         </div>
 
         <div class="tool" id="tool-tuner">
