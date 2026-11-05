@@ -116,6 +116,16 @@
   }
 
   // ---------- Hoja de acordes (acordes arriba de la letra) <-> formato interno [C]letra ----------
+  /** Quita caracteres invisibles (típicos al pegar de webs o chats) y cambia corchetes/espacios "raros" por normales */
+  function cleanText(text) {
+    return String(text == null ? '' : text)
+      .replace(/\r/g, '')
+      .replace(/[\u200B-\u200F\u202A-\u202E\u2060\uFEFF\u00AD]/g, '')
+      .replace(/[\u00A0\u2000-\u200A\u202F\u205F\u3000]/g, ' ')
+      .replace(/[\uFF3B\u3010\u301A]/g, '[')
+      .replace(/[\uFF3D\u3011\u301B]/g, ']');
+  }
+
   /** Línea formada solo por acordes separados por espacios ("C   Am   F") */
   function isChordLine(line) {
     const t = String(line).trim();
@@ -124,7 +134,7 @@
 
   /** Convierte lo que escribe el usuario (acordes arriba de la letra) al formato interno con corchetes. */
   function fromChordSheet(text) {
-    const lines = String(text || '').replace(/\r/g, '').split('\n');
+    const lines = cleanText(text).split('\n');
     const isLyric = (l) => l !== undefined && l.trim() !== '' && !isChordLine(l) && sectionLabel(l) === null;
     const out = [];
     for (let i = 0; i < lines.length; i++) {
@@ -148,7 +158,7 @@
 
   /** Convierte el formato interno a "acordes arriba de la letra" para editarlo. */
   function toChordSheet(lyrics) {
-    const lines = String(lyrics || '').replace(/\r/g, '').split('\n');
+    const lines = cleanText(lyrics).split('\n');
     const out = [];
     lines.forEach((line, i) => {
       if (sectionLabel(line) !== null) { out.push(line); return; }
@@ -191,6 +201,6 @@
   window.Music = {
     TIME_SIGS, parseTimeSig, DISPLAY, CHORD_RE, pitchClass, useFlats, transposeNote, transposeChord,
     semitonesBetween, canonicalKey, keyOptions, parseLine, toGroups,
-    stripChords, sectionLabel, transposeLyrics, isChordLine, fromChordSheet, toChordSheet, lineChords
+    stripChords, sectionLabel, transposeLyrics, cleanText, isChordLine, fromChordSheet, toChordSheet, lineChords
   };
 })();
