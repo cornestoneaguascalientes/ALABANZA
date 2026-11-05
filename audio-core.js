@@ -1,5 +1,5 @@
 /**
- * AUDIO-CORE.JS - Núcleo de audio compartido por Pads y Metrónomo
+ * AUDIO-CORE.JS - Núcleo de audio compartido por Pads, Metrónomo y Percusión
  *
  * - Un único AudioContext para toda la app
  * - Un <audio> silencioso en loop que mantiene viva la sesión de audio con la
@@ -14,7 +14,7 @@
   let lastActive = null;
   const active = new Set();
   const sources = {};
-  const LABELS = { pads: 'Pad ambiental', metronome: 'Metrónomo' };
+  const LABELS = { pads: 'Pad ambiental', metronome: 'Metrónomo', perc: 'Percusión' };
 
   /** WAV de 1 segundo en silencio, generado en memoria (sin archivos) */
   function silentWavUri() {
