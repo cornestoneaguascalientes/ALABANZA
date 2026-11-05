@@ -250,16 +250,29 @@
   }
 
   function lineHtml(line) {
-    if (!line.trim()) return state.mode === 'musician' && state.chordsOnly ? '' : '<div class="gap"></div>';
+    if (!line.trim()) return '<div class="gap"></div>';
     const section = Music.sectionLabel(line);
     if (section) return `<div class="sec">${esc(section)}</div>`;
-    if (state.mode === 'musician' && state.chordsOnly) {
-      const chords = Music.lineChords(line);
-      return chords.length ? `<div class="ln co-line">${chords.map((c) => `<span class="co">${esc(c)}</span>`).join('')}</div>` : '';
-    }
     if (state.mode === 'musician') return chordLine(line);
     const text = Music.stripChords(line);
     return text.trim() ? `<div class="ln">${esc(text)}</div>` : ''; // líneas solo de acordes no aparecen al cantante
+  }
+
+  /** Solo acordes: un título por sección y debajo TODOS sus acordes seguidos en un mismo renglón */
+  function chordsOnlyHtml(lyrics) {
+    const out = [];
+    let row = [];
+    const flush = () => {
+      if (row.length) out.push(`<div class="ln co-line">${row.map((c) => `<span class="co">${esc(c)}</span>`).join('')}</div>`);
+      row = [];
+    };
+    lyrics.split('\n').forEach((line) => {
+      const section = Music.sectionLabel(line);
+      if (section) { flush(); out.push(`<div class="sec">${esc(section)}</div>`); }
+      else row.push(...Music.lineChords(line));
+    });
+    flush();
+    return out.length ? out.join('') : '<p class="empty">Esta canción aún no tiene acordes.</p>';
   }
 
   function renderContent() {
@@ -272,8 +285,9 @@
     $('chords-only').classList.toggle('active', state.chordsOnly);
     $('chords-only').setAttribute('aria-pressed', String(state.chordsOnly));
     box.style.setProperty('--fs', state.scale);
+    const onlyChords = state.mode === 'musician' && state.chordsOnly;
     box.innerHTML = lyrics.trim()
-      ? lyrics.split('\n').map(lineHtml).join('')
+      ? (onlyChords ? chordsOnlyHtml(lyrics) : lyrics.split('\n').map(lineHtml).join(''))
       : '<p class="empty">Esta canción aún no tiene letra.</p>';
     $('current-key').textContent = currentKey();
     $('current-key').classList.toggle('changed', state.semis !== 0);
