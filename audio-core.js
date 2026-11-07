@@ -14,7 +14,7 @@
   let lastActive = null;
   const active = new Set();
   const sources = {};
-  const LABELS = { pads: 'Pad ambiental', metronome: 'Metrónomo', perc: 'Percusión' };
+  const LABELS = { pads: 'Pad ambiental', metronome: 'Metrónomo', perc: 'Percusión', synth: 'Sintetizador' };
 
   /** WAV de 1 segundo en silencio, generado en memoria (sin archivos) */
   function silentWavUri() {
