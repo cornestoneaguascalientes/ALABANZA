@@ -214,6 +214,214 @@
     savePrefs();
   }
 
+  // ---------- Ritmos automáticos (se tocan solos) ----------
+  // Cada ritmo: 4 compases; en el 4.º entra un relleno. X = fuerte, x = normal, o = suave, . = silencio.
+  // 4/4 usa 16 pasos por compás; 6/8 y 12/8 usan 12 (el BPM marca el pulso de 3).
+  const LOOP_KEY = 'alabanza.perc.loops';
+  const LV = { X: 1, x: 0.72, o: 0.4 };
+  const PATTERNS = [
+    { id: 'balada', name: 'Balada', bpm: 68, range: [50, 90], beats: 4, spb: 4,
+      desc: 'Suave y con mucho espacio: cross-stick en 2 y 4, shaker y un bombo ligero. Para oración y momentos tranquilos.',
+      bar: { kick: 'X.......x.o.....', rim: '....X.......X...', shaker: 'X.o.x.o.x.o.x.o.' },
+      fill: { kick: 'X.......X.......', rim: '....X...........', tomH: '............Xx..', tomM: '..............X.', tomL: '...............X' } },
+    { id: 'medio', name: 'Medio tiempo', bpm: 92, range: [70, 115], beats: 4, spb: 4,
+      desc: 'El groove clásico de alabanza: bombo, caja en 2 y 4, hi-hat y pandero suave.',
+      bar: { kick: 'X.....x.X.......', snare: '....X.......X...', hat: 'X.x.X.x.X.x.X.x.', tamb: '..o...o...o...o.' },
+      fill: { snare: '....X.....x.xxXX', kick: 'X.......X.....x.' }, first: { crash: 'X...............' } },
+    { id: 'viva', name: 'Alabanza viva', bpm: 124, range: [100, 150], beats: 4, spb: 4,
+      desc: 'Con energía: hi-hat abierto, aplauso junto con la caja y pandero al contratiempo.',
+      bar: { kick: 'X.....x.X.x.....', snare: '....X.......X...', clap: '....x.......x...', hat: 'X.x.X.x.X.x.X.x.', hatO: '..............X.', tamb: '..x...x...x...x.' },
+      fill: { snare: '....X.....xxxxXX', clap: '................', hatO: '................' }, first: { crash: 'X...............' } },
+    { id: 'fiesta', name: 'Celebración', bpm: 128, range: [100, 150], beats: 4, spb: 4,
+      desc: 'Bombo a negras, aplausos en 2 y 4, hi-hat abierto y shaker en semicorcheas. Para cantos de fiesta.',
+      bar: { kick: 'X...X...X...X...', clap: '....X.......X...', hatO: '..X...X...X...X.', shaker: 'XoxoXoxoXoxoXoxo' },
+      fill: { clap: '....X.......xxXX', hatO: '................' }, first: { crash: 'X...............' } },
+    { id: 'seis8', name: '6/8 Worship', bpm: 52, range: [40, 80], beats: 2, spb: 6,
+      desc: 'Compás de 6/8 suave: bombo, cross-stick en el segundo pulso y shaker en corcheas. El BPM marca el pulso de 3.',
+      bar: { kick: 'X.........o.', rim: '......X.....', shaker: 'X.o.o.x.o.o.' },
+      fill: { tomH: '........Xx..', tomM: '..........X.', tomL: '...........X' } },
+    { id: 'doce8', name: '12/8 Gospel', bpm: 62, range: [45, 85], beats: 4, spb: 3,
+      desc: 'Sabor gospel en 12/8: bombo en 1 y 3, caja en 2 y 4 y hi-hat en tresillos. El BPM marca el pulso de 3.',
+      bar: { kick: 'X.....x.....', snare: '...X.....X..', hat: 'Xooxooxooxoo' },
+      fill: { snare: '...X.....xXx' } }
+  ];
+
+  const loop = { on: false, idx: 0, bpms: {}, vol: 0.8, bar: 0, step: 0, next: 0, queue: [], ticker: null, raf: 0 };
+  const loopPat = () => PATTERNS[loop.idx];
+  const loopBpm = () => loop.bpms[loopPat().id] || loopPat().bpm;
+
+  function loadLoopPrefs() {
+    try {
+      const p = JSON.parse(localStorage.getItem(LOOP_KEY)) || {};
+      const i = PATTERNS.findIndex((x) => x.id === p.id);
+      if (i !== -1) loop.idx = i;
+      if ('vol' in p) loop.vol = clamp(p.vol, 0, 1);
+      if (p.bpms && typeof p.bpms === 'object') {
+        PATTERNS.forEach((x) => { if (p.bpms[x.id]) loop.bpms[x.id] = clamp(p.bpms[x.id], x.range[0], x.range[1]); });
+      }
+    } catch (e) { /* noop */ }
+  }
+  function saveLoopPrefs() {
+    try { localStorage.setItem(LOOP_KEY, JSON.stringify({ id: loopPat().id, vol: loop.vol, bpms: loop.bpms })); } catch (e) { /* noop */ }
+  }
+
+  // Timer en Worker: no se frena con la pantalla bloqueada (con respaldo a setInterval)
+  function createTicker(fn) {
+    try {
+      const src = 'let t=null;onmessage=e=>{if(e.data==="start"){clearInterval(t);t=setInterval(()=>postMessage(0),25)}else{clearInterval(t)}}';
+      const worker = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+      worker.onmessage = fn;
+      return { start: () => worker.postMessage('start'), stop: () => worker.postMessage('stop') };
+    } catch (e) {
+      let id = null;
+      return { start: () => { clearInterval(id); id = setInterval(fn, 25); }, stop: () => clearInterval(id) };
+    }
+  }
+
+  /** Golpes de un paso: [[sonido, fuerza], ...] */
+  function stepEvents(pat, bar, step) {
+    const ev = [];
+    const tracks = bar % 4 === 3 && pat.fill ? Object.assign({}, pat.bar, pat.fill) : pat.bar;
+    Object.keys(tracks).forEach((v) => { const l = LV[tracks[v][step]]; if (l) ev.push([v, l]); });
+    if (bar % 4 === 0 && pat.first) {
+      Object.keys(pat.first).forEach((v) => { const l = LV[pat.first[v][step]]; if (l) ev.push([v, l]); });
+    }
+    return ev;
+  }
+
+  function loopScheduler() {
+    if (!loop.on) return;
+    const pat = loopPat();
+    const stepDur = 60 / loopBpm() / pat.spb, n = pat.beats * pat.spb;
+    // Si el timer se atrasó (pantalla bloqueada, CPU ocupada), no soltar golpes acumulados en ráfaga
+    if (loop.next < ctx.currentTime - 0.05) loop.next = ctx.currentTime + 0.02;
+    while (loop.next < ctx.currentTime + 0.2) {
+      stepEvents(pat, loop.bar, loop.step).forEach(([v, l]) => {
+        const jitter = (v === 'kick' ? 0.002 : 0.006) * (Math.random() - 0.5);
+        VOICES[v](Math.max(ctx.currentTime, loop.next + jitter), l * (0.93 + Math.random() * 0.14) * loop.vol);
+      });
+      loop.queue.push({ t: loop.next, bar: loop.bar, step: loop.step });
+      if (loop.queue.length > 64) loop.queue.shift();
+      loop.next += stepDur;
+      loop.step++;
+      if (loop.step >= n) { loop.step = 0; loop.bar = (loop.bar + 1) % 4; }
+    }
+  }
+
+  function loopDraw() {
+    if (!loop.on) return;
+    let cur = null;
+    while (loop.queue.length && loop.queue[0].t <= ctx.currentTime) cur = loop.queue.shift();
+    if (cur) {
+      const pat = loopPat(), beat = Math.floor(cur.step / pat.spb);
+      document.querySelectorAll('#perc-loop-dots .dot').forEach((d, i) => d.classList.toggle('on', i === beat));
+      const lab = $('perc-loop-bar');
+      if (lab) lab.textContent = 'Compás ' + (cur.bar + 1) + ' de 4' + (cur.bar === 3 && pat.fill ? ' · relleno' : '');
+    }
+    loop.raf = requestAnimationFrame(loopDraw);
+  }
+
+  function startLoop() {
+    if (loop.on) return;
+    ensureAudio();
+    loop.on = true;
+    loop.bar = 0; loop.step = 0; loop.queue = [];
+    loop.next = ctx.currentTime + 0.06;
+    if (!loop.ticker) loop.ticker = createTicker(loopScheduler);
+    loopScheduler();
+    loop.ticker.start();
+    loop.raf = requestAnimationFrame(loopDraw);
+    AudioCore.setActive('perc', true);
+    renderLoop();
+  }
+
+  function stopLoop() {
+    if (!loop.on) return;
+    loop.on = false;
+    if (loop.ticker) loop.ticker.stop();
+    cancelAnimationFrame(loop.raf);
+    loop.queue = [];
+    AudioCore.setActive('perc', false);
+    renderLoop();
+  }
+
+  const toggleLoop = () => (loop.on ? stopLoop() : startLoop());
+
+  function setLoopPattern(i) {
+    if (!PATTERNS[i]) return;
+    loop.idx = i;
+    if (loop.on) { loop.bar = 0; loop.step = 0; loop.queue = []; loop.next = ctx.currentTime + 0.06; }
+    saveLoopPrefs();
+    buildLoopDots();
+    renderLoop();
+  }
+
+  function setLoopBpm(v) {
+    const p = loopPat();
+    loop.bpms[p.id] = clamp(Math.round(v), p.range[0], p.range[1]);
+    saveLoopPrefs();
+    renderLoop();
+  }
+
+  function buildLoopDots() {
+    const box = $('perc-loop-dots');
+    if (!box) return;
+    box.innerHTML = Array.from({ length: loopPat().beats }, (_, i) => '<span class="dot' + (i === 0 ? ' accent' : '') + '"></span>').join('');
+    const lab = $('perc-loop-bar');
+    if (lab) lab.textContent = '';
+  }
+
+  function renderLoop() {
+    const p = loopPat();
+    document.querySelectorAll('#perc-loops [data-i]').forEach((b) => {
+      const on = Number(b.dataset.i) === loop.idx;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-pressed', String(on));
+    });
+    const desc = $('perc-loop-desc');
+    if (desc) desc.textContent = p.desc;
+    const s = $('perc-loop-bpm');
+    if (s) { s.min = p.range[0]; s.max = p.range[1]; s.value = loopBpm(); }
+    const so = $('perc-loop-bpm-value');
+    if (so) so.textContent = loopBpm() + ' BPM';
+    const t = $('perc-loop-toggle');
+    if (t) {
+      t.classList.toggle('playing', loop.on);
+      t.setAttribute('aria-pressed', String(loop.on));
+      t.setAttribute('aria-label', loop.on ? 'Detener ritmo' : 'Reproducir ritmo');
+    }
+    if (!loop.on) {
+      document.querySelectorAll('#perc-loop-dots .dot').forEach((d) => d.classList.remove('on'));
+      const lab = $('perc-loop-bar');
+      if (lab) lab.textContent = '';
+    }
+  }
+
+  function initLoops() {
+    loadLoopPrefs();
+    const chips = $('perc-loops');
+    if (!chips) return;
+    chips.innerHTML = PATTERNS.map((p, i) => `<button type="button" class="chip" data-i="${i}" aria-pressed="false">${p.name}</button>`).join('');
+    chips.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-i]');
+      if (b) setLoopPattern(Number(b.dataset.i));
+    });
+    $('perc-loop-toggle').addEventListener('click', toggleLoop);
+    $('perc-loop-bpm').addEventListener('input', (e) => setLoopBpm(Number(e.target.value)));
+    const vol = $('perc-loop-volume'), volOut = $('perc-loop-volume-value');
+    vol.value = Math.round(loop.vol * 100); volOut.textContent = vol.value + '%';
+    vol.addEventListener('input', () => { loop.vol = vol.value / 100; volOut.textContent = vol.value + '%'; saveLoopPrefs(); });
+    $('perc-loop-sync').addEventListener('click', () => {
+      if (!window.Metronome || !Metronome.getBPM) return;
+      setLoopBpm(Metronome.getBPM());
+      if (window.UI) UI.toast('Ritmo a ' + loopBpm() + ' BPM');
+    });
+    buildLoopDots();
+    renderLoop();
+  }
+
+  AudioCore.register('perc', { start: startLoop, stop: stopLoop });
+
   const percActive = () => {
     const t = $('tool-perc'), v = $('tools-view');
     return t && v && t.classList.contains('active') && v.classList.contains('active');
@@ -225,6 +433,7 @@
     const box = $('perc-pads');
     if (!box) return;
     buildPads();
+    initLoops();
 
     // Multitáctil: cada dedo toca su pad; un pad se activa al presionar (sin esperar a soltar)
     box.addEventListener('pointerdown', (e) => {
@@ -259,5 +468,5 @@
     });
   });
 
-  window.Perc = { trigger, setBank, setVolume, setReverb };
+  window.Perc = { trigger, setBank, setVolume, setReverb, startLoop, stopLoop, toggleLoop, PATTERNS };
 })();
