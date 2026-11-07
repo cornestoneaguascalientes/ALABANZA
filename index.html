@@ -272,6 +272,31 @@
         <div class="tool" id="tool-perc">
           <div class="tool-head">
             <h2>Percusión</h2>
+          </div>
+
+          <div class="loop-box">
+            <div class="sub-head">
+              <h3>Ritmos</h3>
+              <button id="perc-loop-toggle" class="round-btn" type="button" aria-label="Reproducir ritmo" aria-pressed="false">
+                <svg class="i i-play"><use href="#i-play"/></svg>
+              <svg class="i i-stop"><use href="#i-stop"/></svg>
+              </button>
+            </div>
+            <div id="perc-loops" class="chips" role="group" aria-label="Ritmo"></div>
+            <p id="perc-loop-desc" class="hint"></p>
+            <div id="perc-loop-dots" class="beat-dots" aria-hidden="true"></div>
+            <p id="perc-loop-bar" class="hint loop-bar"></p>
+            <label class="slider-row"><span>Tempo</span>
+              <input id="perc-loop-bpm" type="range" min="50" max="150" value="92" aria-label="Tempo del ritmo">
+              <output id="perc-loop-bpm-value">92 BPM</output></label>
+            <label class="slider-row"><span>Vol. ritmo</span>
+              <input id="perc-loop-volume" type="range" min="0" max="100" value="80" aria-label="Volumen del ritmo">
+              <output id="perc-loop-volume-value">80%</output></label>
+            <button id="perc-loop-sync" class="btn btn-block" type="button">Usar el BPM de la canción</button>
+          </div>
+
+          <div class="sub-head">
+            <h3>Pads</h3>
             <div id="perc-banks" class="seg" role="group" aria-label="Banco de sonidos">
               <button type="button" data-bank="0" class="active" aria-pressed="true">Banco 1</button>
               <button type="button" data-bank="1" aria-pressed="false">Banco 2</button>
@@ -309,6 +334,44 @@
         <div class="tool" id="tool-synth">
           <div class="tool-head">
             <h2>Sintetizador</h2>
+          </div>
+
+          <div class="loop-box">
+            <div class="sub-head">
+              <h3>Pistas</h3>
+              <button id="synth-loop-toggle" class="round-btn" type="button" aria-label="Reproducir pista" aria-pressed="false">
+                <svg class="i i-play"><use href="#i-play"/></svg>
+              <svg class="i i-stop"><use href="#i-stop"/></svg>
+              </button>
+            </div>
+            <div id="synth-loops" class="chips" role="group" aria-label="Pista"></div>
+            <p id="synth-loop-desc" class="hint"></p>
+            <div id="synth-loop-chords" class="chord-row" aria-label="Acordes de la pista"></div>
+            <p class="loop-label">Tono</p>
+            <div id="synth-loop-keys" class="keys k6" role="group" aria-label="Tono de la pista"></div>
+            <div class="loop-opts">
+              <div id="synth-mode" class="seg" role="group" aria-label="Modo">
+                <button type="button" data-mode="maj">Mayor</button>
+                <button type="button" data-mode="min">Menor</button>
+              </div>
+              <div id="synth-bars" class="seg" role="group" aria-label="Cambio de acorde">
+                <button type="button" data-bars="1">1 compás</button>
+                <button type="button" data-bars="2">2 compases</button>
+              </div>
+            </div>
+            <p class="loop-label">Progresión</p>
+            <div id="synth-progs" class="chips" role="group" aria-label="Progresión"></div>
+            <label class="slider-row"><span>Tempo</span>
+              <input id="synth-loop-bpm" type="range" min="50" max="120" value="70" aria-label="Tempo de la pista">
+              <output id="synth-loop-bpm-value">70 BPM</output></label>
+            <label class="slider-row"><span>Vol. pista</span>
+              <input id="synth-loop-volume" type="range" min="0" max="100" value="80" aria-label="Volumen de la pista">
+              <output id="synth-loop-volume-value">80%</output></label>
+            <button id="synth-loop-sync" class="btn btn-block" type="button">Tomar tono y BPM de la canción</button>
+          </div>
+
+          <div class="sub-head">
+            <h3>Teclado</h3>
             <button id="synth-sustain" class="btn btn-sm" type="button" aria-pressed="false">Sostener</button>
           </div>
           <div id="synth-presets" class="chips" role="group" aria-label="Sonido"></div>
