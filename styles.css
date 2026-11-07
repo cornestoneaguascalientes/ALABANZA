@@ -525,3 +525,16 @@ body.on-home #view-title { display: none; }
   .splash-glow { animation: none; display: none; }
   @keyframes splash-fade { from { opacity: 0; } to { opacity: 1; } }
 }
+
+/* Ritmos (percusión) y pistas (sintetizador) */
+.sub-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 4px 0 4px; }
+.sub-head h3 { font-size: 19px; font-weight: 600; letter-spacing: -0.01em; }
+.loop-box { padding-bottom: 24px; margin-bottom: 24px; border-bottom: 1px solid var(--line); }
+.loop-box .slider-row { margin-top: 18px; }
+.loop-bar { min-height: 18px; margin-top: 0; padding-top: 0; }
+.loop-label { margin-top: 18px; font-size: 14px; color: var(--muted); font-weight: 500; }
+.loop-opts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.keys.k6 { grid-template-columns: repeat(6, 1fr); margin-top: 8px; }
+.chord-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.chord-chip { flex: 1; min-width: 56px; text-align: center; padding: 10px 6px; border: 1px solid var(--line-2); border-radius: 12px; font-size: 18px; font-weight: 700; color: var(--muted); transition: background .12s, color .12s; }
+.chord-chip.on { background: var(--white); color: var(--bg); border-color: var(--white); }
